@@ -18,7 +18,24 @@ gestos naturales y cero dependencias pesadas.
 | M2 | Motor de prioridades (preempt + expiración) + batería y timer reales | ✅ |
 | M3 | Gestos (hover/click/swipe dismiss con rubber-band) + springs con física | ✅ |
 | M4 | Settings tipados parse-once + cápsula flotante en pantallas sin notch | ✅ |
-| M5 | CI + releases con actualizaciones automáticas | 🔜 |
+| M5 | CI + releases con DMG en GitHub Releases | ✅ |
+
+## Instalación (DMG)
+
+1. Descarga el DMG más reciente desde [Releases](https://github.com/sebastian-rgv/notchFX/releases).
+2. Abre el DMG y arrastra **notchFX** a **Aplicaciones**.
+3. Primer arranque: como el app no está notarizado, haz **click derecho → Abrir** (una sola vez),
+   o permite el app en *Ajustes → Privacidad y seguridad*.
+
+Para generar el DMG localmente:
+
+```bash
+./Scripts/build_release.sh            # versión desde el último tag git
+./Scripts/build_release.sh 0.2.0      # o versión explícita
+```
+
+Cada tag `v*` que se pushea dispara el workflow de release y publica el DMG
+automáticamente en GitHub Releases.
 
 ## Requisitos
 
