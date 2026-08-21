@@ -1,38 +1,59 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 final class NotchPanelController {
     private let panel: NSPanel
     private let stateModel: NotchStateModel
+    private let engine: ActivityEngine
+    private let settingsModel: SettingsModel
+    private let hostingView: PassthroughHostingView
 
-    init(stateModel: NotchStateModel, engine: ActivityEngine) {
+    private var currentSurfaceStyle: NotchSettings.SurfaceStyle = .notch
+    private var settingsCancellable: AnyCancellable?
+
+    init(
+        stateModel: NotchStateModel,
+        engine: ActivityEngine,
+        settingsModel: SettingsModel
+    ) {
         self.stateModel = stateModel
+        self.engine = engine
+        self.settingsModel = settingsModel
         panel = Self.makePanel()
 
-        let hostingView = PassthroughHostingView(rootView: NotchRootView(
+        let view = PassthroughHostingView(rootView: Self.makeRootView(
             stateModel: stateModel,
-            engine: engine
+            engine: engine,
+            settingsModel: settingsModel,
+            surfaceStyle: .notch
         ))
-        hostingView.opaqueRectProvider = { [weak stateModel] in
+        view.opaqueRectProvider = { [weak stateModel] in
             guard let stateModel else { return .zero }
             return ScreenGeometry.opaqueRectInWindow(for: stateModel.state)
         }
-        panel.contentView = hostingView
-        positionOverNotch()
+
+        hostingView = view
+        panel.contentView = view
+
+        settingsCancellable = settingsModel.objectWillChange.sink { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.refreshLayout()
+            }
+        }
+
+        _ = positionOverBestScreen()
     }
 
     func show() {
-        positionOverNotch()
-        panel.orderFrontRegardless()
+        if positionOverBestScreen() {
+            panel.orderFrontRegardless()
+        }
     }
 
     func hide() {
         panel.orderOut(nil)
-    }
-
-    func reposition() {
-        positionOverNotch()
     }
 
     func handleOutsideClick(at screenLocation: NSPoint) {
@@ -42,20 +63,74 @@ final class NotchPanelController {
         }
     }
 
-    private func positionOverNotch() {
-        let screen = NSScreen.screens.first {
-            ScreenGeometry.isNotchedDisplay(topSafeAreaInset: $0.safeAreaInsets.top)
-        } ?? NSScreen.main
+    private func refreshLayout() {
+        if positionOverBestScreen() && panel.isVisible {
+            hostingView.rootView = Self.makeRootView(
+                stateModel: stateModel,
+                engine: engine,
+                settingsModel: settingsModel,
+                surfaceStyle: currentSurfaceStyle
+            )
+        }
+    }
 
-        guard let screen else { return }
+    @discardableResult
+    private func positionOverBestScreen() -> Bool {
+        let screens = NSScreen.screens
+        let candidates = screens.map {
+            ScreenCandidate(
+                topSafeAreaInset: $0.safeAreaInsets.top,
+                isMain: $0 == NSScreen.main
+            )
+        }
 
-        let anchor = ScreenGeometry.surfaceAnchorFrame(screenFrame: screen.frame)
+        guard let index = DisplayTargetResolver.pickIndex(
+            mode: settingsModel.settings.displayMode,
+            screens: candidates
+        ) else {
+            hide()
+            return false
+        }
+
+        let screen = screens[index]
+        let inset = candidates[index].topSafeAreaInset
+
+        currentSurfaceStyle = DisplayTargetResolver.effectiveStyle(
+            preferred: settingsModel.settings.surfaceStyle,
+            topSafeAreaInset: inset
+        )
+
+        let anchor = ScreenGeometry.surfaceAnchorFrame(
+            screenFrame: screen.frame,
+            topSafeAreaInset: inset,
+            style: currentSurfaceStyle
+        )
         panel.setFrame(anchor, display: true)
+        return true
+    }
+
+    private static func makeRootView(
+        stateModel: NotchStateModel,
+        engine: ActivityEngine,
+        settingsModel: SettingsModel,
+        surfaceStyle: NotchSettings.SurfaceStyle
+    ) -> NotchRootView {
+        NotchRootView(
+            stateModel: stateModel,
+            engine: engine,
+            settingsModel: settingsModel,
+            surfaceStyle: surfaceStyle
+        )
     }
 
     private static func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: CGRect(x: 0, y: 0, width: ScreenGeometry.windowWidth, height: ScreenGeometry.windowHeight),
+            contentRect: CGRect(
+                x: 0,
+                y: 0,
+                width: ScreenGeometry.windowWidth,
+                height: ScreenGeometry.windowHeight
+            ),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false

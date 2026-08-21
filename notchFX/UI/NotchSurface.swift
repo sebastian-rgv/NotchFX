@@ -3,6 +3,7 @@ import SwiftUI
 struct NotchSurface: View {
     let width: CGFloat
     let height: CGFloat
+    let style: NotchSettings.SurfaceStyle
     let content: AnyView
 
     @Environment(\.notchHovering) private var isHovering
@@ -20,7 +21,7 @@ struct NotchSurface: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            NotchShape(cornerRadius: cornerRadius)
+            surfaceShape
                 .fill(.black)
             content
                 .frame(width: width, height: height)
@@ -28,5 +29,19 @@ struct NotchSurface: View {
         }
         .frame(width: width, height: height)
         .animation(.notchHover, value: cornerRadius)
+    }
+
+    private var surfaceShape: AnyShape {
+        switch style {
+        case .notch:
+            AnyShape(NotchShape(cornerRadius: cornerRadius))
+        case .capsule:
+            AnyShape(RoundedCornerShape(
+                topLeading: cornerRadius,
+                topTrailing: cornerRadius,
+                bottomLeading: cornerRadius,
+                bottomTrailing: cornerRadius
+            ))
+        }
     }
 }

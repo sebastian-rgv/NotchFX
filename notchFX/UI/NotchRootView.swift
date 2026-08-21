@@ -3,6 +3,8 @@ import SwiftUI
 struct NotchRootView: View {
     @ObservedObject var stateModel: NotchStateModel
     let engine: ActivityEngine
+    @ObservedObject var settingsModel: SettingsModel
+    let surfaceStyle: NotchSettings.SurfaceStyle
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -30,6 +32,7 @@ struct NotchRootView: View {
         NotchSurface(
             width: isExpanded ? ScreenGeometry.expandedWidth : ScreenGeometry.compactWidth,
             height: isExpanded ? ScreenGeometry.expandedHeight : ScreenGeometry.compactHeight,
+            style: surfaceStyle,
             content: AnyView(
                 content(for: activity, expanded: isExpanded)
                     .transition(.opacity)
@@ -37,7 +40,9 @@ struct NotchRootView: View {
         )
         .notchGestures(
             onTap: { stateModel.toggleExpanded() },
-            onDismiss: { engine.dismissTop() }
+            onDismiss: settingsModel.settings.swipeDismissEnabled
+                ? { engine.dismissTop() }
+                : {}
         )
     }
 
