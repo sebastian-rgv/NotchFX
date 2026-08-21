@@ -2,9 +2,11 @@ import Foundation
 
 @MainActor
 final class LocalTimerController {
+    static let activityID = ActivityID(rawValue: "timer.local")
+
     private let engine: ActivityEngine
     private var endTask: Task<Void, Never>?
-    private var activeTimerID = ActivityID(rawValue: "timer.local")
+    private var activeTimerID = LocalTimerController.activityID
 
     init(engine: ActivityEngine) {
         self.engine = engine

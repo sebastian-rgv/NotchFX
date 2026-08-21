@@ -18,16 +18,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let stateModel = NotchStateModel()
     private lazy var engine = ActivityEngine(stateModel: stateModel)
     private lazy var timerController = LocalTimerController(engine: engine)
+    private lazy var panelController = NotchPanelController(
+        stateModel: stateModel,
+        engine: engine
+    )
     private var batteryService: BatteryMonitorService?
     private var statusItem: NSStatusItem?
+    private var outsideClickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installStatusItem()
         startBatteryMonitoring()
+        installOutsideClickMonitor()
+        panelController.show()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         batteryService?.stop()
+
+        if let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        outsideClickMonitor = nil
+    }
+
+    private func installOutsideClickMonitor() {
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown]
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.panelController.handleOutsideClick(at: NSEvent.mouseLocation)
+            }
+        }
     }
 
     private func installStatusItem() {

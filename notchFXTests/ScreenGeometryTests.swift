@@ -14,19 +14,19 @@ struct ScreenGeometryTests {
     }
 
     @Test func anchorIsCenteredHorizontally() {
-        let anchor = ScreenGeometry.notchAnchorFrame(screenFrame: screenFrame)
+        let anchor = ScreenGeometry.surfaceAnchorFrame(screenFrame: screenFrame)
         #expect(abs(anchor.midX - screenFrame.midX) < 0.001)
     }
 
     @Test func anchorIsFlushWithTopEdge() {
-        let anchor = ScreenGeometry.notchAnchorFrame(screenFrame: screenFrame)
+        let anchor = ScreenGeometry.surfaceAnchorFrame(screenFrame: screenFrame)
         #expect(abs(anchor.maxY - screenFrame.maxY) < 0.001)
-        #expect(anchor.height == ScreenGeometry.defaultAnchorHeight)
-        #expect(anchor.width == ScreenGeometry.defaultAnchorWidth)
+        #expect(anchor.height == ScreenGeometry.windowHeight)
+        #expect(anchor.width == ScreenGeometry.windowWidth)
     }
 
     @Test func anchorSupportsCustomSize() {
-        let anchor = ScreenGeometry.notchAnchorFrame(
+        let anchor = ScreenGeometry.surfaceAnchorFrame(
             screenFrame: screenFrame,
             width: 300,
             height: 60

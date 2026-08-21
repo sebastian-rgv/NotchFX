@@ -27,6 +27,12 @@ final class ActivityEngine: ObservableObject {
         refresh()
     }
 
+    func dismissTop() {
+        guard let top = scheduler.top else { return }
+        scheduler.remove(top.activity.id)
+        refresh()
+    }
+
     func refresh() {
         scheduler.expire(now: now())
 

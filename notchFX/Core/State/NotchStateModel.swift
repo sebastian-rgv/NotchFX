@@ -42,6 +42,17 @@ final class NotchStateModel: ObservableObject {
         apply(.compact(activity))
     }
 
+    func toggleExpanded() {
+        switch state {
+        case .compact:
+            expand()
+        case .expanded:
+            collapse()
+        case .hidden:
+            break
+        }
+    }
+
     func dismiss() {
         apply(.hidden)
     }
