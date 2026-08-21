@@ -27,16 +27,57 @@ struct NotchRootView: View {
         NotchShape(cornerRadius: ScreenGeometry.defaultAnchorHeight / 2.6)
             .fill(.black)
             .overlay(alignment: .center) {
-                HStack(spacing: 6) {
-                    Image(systemName: activity.kind.symbolName)
-                        .font(.system(size: 11, weight: .regular))
-                    Text(activity.kind.displayName)
+                compactContent(activity)
+            }
+            .frame(height: ScreenGeometry.defaultAnchorHeight)
+    }
+
+    @ViewBuilder
+    private func compactContent(_ activity: NotchActivity) -> some View {
+        switch activity.detail {
+        case .timer(let endDate):
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                    .font(.system(size: 11, weight: .regular))
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(Self.formatCountdown(from: context.date, to: endDate))
                         .font(.system(size: 11, weight: .regular))
                         .monospacedDigit()
                 }
-                .foregroundStyle(.white.opacity(0.9))
             }
-            .frame(height: ScreenGeometry.defaultAnchorHeight)
+            .foregroundStyle(.white.opacity(0.9))
+
+        case .battery(let percent, let isCharging):
+            HStack(spacing: 5) {
+                Image(systemName: isCharging ? "battery.bolt" : "battery.75percent")
+                    .font(.system(size: 12, weight: .regular))
+                Text("\(percent)%")
+                    .font(.system(size: 11, weight: .regular))
+                    .monospacedDigit()
+            }
+            .foregroundStyle(.white.opacity(0.9))
+
+        case .timerFinished(let label):
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 11, weight: .regular))
+                Text(label)
+                    .font(.system(size: 11, weight: .regular))
+            }
+            .foregroundStyle(.white.opacity(0.9))
+
+        case .info(let symbol, let label):
+            HStack(spacing: 6) {
+                if !symbol.isEmpty {
+                    Image(systemName: symbol)
+                        .font(.system(size: 11, weight: .regular))
+                }
+                Text(label.isEmpty ? activity.kind.displayName : label)
+                    .font(.system(size: 11, weight: .regular))
+                    .monospacedDigit()
+            }
+            .foregroundStyle(.white.opacity(0.9))
+        }
     }
 
     private func expandedPanel(_ activity: NotchActivity) -> some View {
@@ -53,5 +94,12 @@ struct NotchRootView: View {
                 .foregroundStyle(.white.opacity(0.9))
             }
             .frame(height: ScreenGeometry.defaultAnchorHeight * 2)
+    }
+
+    static func formatCountdown(from date: Date, to endDate: Date) -> String {
+        let remaining = max(0, Int(endDate.timeIntervalSince(date).rounded(.up)))
+        let minutes = remaining / 60
+        let seconds = remaining % 60
+        return String(format: "%02d:%02d", minutes, seconds)
     }
 }

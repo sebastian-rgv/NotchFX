@@ -19,6 +19,19 @@ final class NotchStateModel: ObservableObject {
         apply(.compact(activity))
     }
 
+    func replace(_ activity: NotchActivity) {
+        switch state {
+        case .hidden:
+            state = .compact(activity)
+        case .compact:
+            state = .compact(activity)
+        case .expanded(let current):
+            if current.id == activity.id {
+                state = .expanded(activity)
+            }
+        }
+    }
+
     func expand() {
         guard let activity = state.activity else { return }
         apply(.expanded(activity))

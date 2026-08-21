@@ -16,31 +16,93 @@ final class AppMain {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let stateModel = NotchStateModel()
-    private var panelController: NotchPanelController?
+    private lazy var engine = ActivityEngine(stateModel: stateModel)
+    private lazy var timerController = LocalTimerController(engine: engine)
+    private var batteryService: BatteryMonitorService?
+    private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        panelController = NotchPanelController(stateModel: stateModel)
-        panelController?.show()
-
-        let welcome = NotchActivity(
-            id: ActivityID(rawValue: "m1.welcome"),
-            kind: .timer
-        )
-        stateModel.present(welcome)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
-            self?.stateModel.expand()
-            self?.scheduleCollapse()
-        }
-    }
-
-    private func scheduleCollapse() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
-            self?.stateModel.collapse()
-        }
+        installStatusItem()
+        startBatteryMonitoring()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        panelController?.hide()
+        batteryService?.stop()
+    }
+
+    private func installStatusItem() {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.button?.image = NSImage(
+            systemSymbolName: "rectangle.inset.filled",
+            accessibilityDescription: "notchFX"
+        )
+
+        let menu = NSMenu()
+
+        let demoTimer = NSMenuItem(
+            title: "Temporizador demo (10 s)",
+            action: #selector(startDemoTimer),
+            keyEquivalent: ""
+        )
+        demoTimer.target = self
+        menu.addItem(demoTimer)
+
+        let testAlert = NSMenuItem(
+            title: "Alerta de prueba",
+            action: #selector(emitTestAlert),
+            keyEquivalent: ""
+        )
+        testAlert.target = self
+        menu.addItem(testAlert)
+
+        menu.addItem(.separator())
+
+        let quit = NSMenuItem(
+            title: "Salir de notchFX",
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        )
+        menu.addItem(quit)
+
+        item.menu = menu
+        statusItem = item
+    }
+
+    @objc private func startDemoTimer() {
+        timerController.start(duration: 10)
+    }
+
+    @objc private func emitTestAlert() {
+        engine.present(
+            NotchActivity(
+                id: ActivityID(rawValue: "test.alert.\(UUID().uuidString)"),
+                kind: .battery,
+                detail: .battery(percent: 42, isCharging: true)
+            ),
+            priority: .alert,
+            ttl: 5
+        )
+    }
+
+    private func startBatteryMonitoring() {
+        let service = BatteryMonitorService { [weak self] event in
+            MainActor.assumeIsolated {
+                self?.handleBatteryEvent(event)
+            }
+        }
+        service.start()
+        batteryService = service
+    }
+
+    private func handleBatteryEvent(_ event: BatteryEvent) {
+        engine.present(
+            NotchActivity(
+                id: ActivityID(rawValue: "battery.\(UUID().uuidString)"),
+                kind: .battery,
+                detail: event.detail
+            ),
+            priority: .alert,
+            ttl: 5
+        )
     }
 }

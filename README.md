@@ -15,7 +15,7 @@ gestos naturales y cero dependencias pesadas.
 | Hito | Contenido | Estado |
 |------|-----------|--------|
 | M1 | Esqueleto: ventana overlay sobre el notch, shape nativo, máquina de estados tipada + tests | ✅ |
-| M2 | Motor de prioridades de actividades + primeras activities reales | 🔜 |
+| M2 | Motor de prioridades (preempt + expiración) + batería y timer reales | ✅ |
 | M3 | Gestos (hover/swipe/drag) + animaciones spring con física | 🔜 |
 | M4 | Settings tipados + soporte pantallas sin notch | 🔜 |
 | M5 | CI + releases con actualizaciones automáticas | 🔜 |
@@ -49,11 +49,13 @@ xcodebuild -project notchFX.xcodeproj -scheme notchFX -destination 'platform=mac
 
 ```
 notchFX/
-├── App/              # Entry point + AppDelegate (AppKit-first)
+├── App/              # Entry point + AppDelegate (AppKit-first) + menú de barra
 ├── Core/
 │   ├── State/        # NotchState tipado (enum con valores asociados) + modelo observable
+│   ├── Engine/       # Scheduler de prioridades (array ordenado, preempt, expiración)
+│   ├── Services/     # Batería (IOKit push), timer local
 │   └── Windowing/    # Panel overlay no activador + geometría pura testeable
-└── UI/               # Shapes SwiftUI + vistas raíz
+└── UI/               # Shapes SwiftUI + vistas raíz por tipo de actividad
 ```
 
 Principios: estados modelados con tipos (no strings), transiciones validadas por el
