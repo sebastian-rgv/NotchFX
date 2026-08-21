@@ -1,92 +1,111 @@
 <h1 align="center">notchFX</h1>
 
 <p align="center">
-  <strong>Convierte la muesca de tu MacBook en una superficie viva estilo Dynamic Island.</strong>
+  <strong>Bring your notch to life.</strong>
+</p>
+
+<p align="center">
+  Convierte la muesca de tu MacBook en una isla dinámica viva:<br>
+  temporizadores, alertas de batería y más — con física real y gestos naturales.
 </p>
 
 ---
 
-**notchFX** es una app nativa para macOS que transforma el notch en un widget interactivo:
-media, temporizadores, alertas de sistema, HUDs y más — con animaciones de física real,
-gestos naturales y cero dependencias pesadas.
+## 🪄 ¿Qué hace por ti?
 
-## Estado del proyecto
+La parte superior de tu MacBook tiene un espacio negro muerto.
+**notchFX lo convierte en un centro de información interactivo**: aparece cuando algo
+importa, desaparece cuando no, y responde a tus dedos como si fuera parte del hardware.
 
-| Hito | Contenido | Estado |
-|------|-----------|--------|
-| M1 | Esqueleto: ventana overlay sobre el notch, shape nativo, máquina de estados tipada + tests | ✅ |
-| M2 | Motor de prioridades (preempt + expiración) + batería y timer reales | ✅ |
-| M3 | Gestos (hover/click/swipe dismiss con rubber-band) + springs con física | ✅ |
-| M4 | Settings tipados parse-once + cápsula flotante en pantallas sin notch | ✅ |
-| M5 | CI + releases con DMG en GitHub Releases | ✅ |
+### ⏱️ Temporizadores vivos
 
-## Instalación (DMG)
+- Lanza un temporizador y mira el **countdown en vivo** sobre tu notch
+- Al terminar, la isla se expande sola para avisarte — nada de timers olvidados
+- ¿Te arrepentiste? **Cáncelalo con un click** desde la propia isla
 
-1. Descarga el DMG más reciente desde [Releases](https://github.com/sebastian-rgv/notchFX/releases).
-2. Abre el DMG y arrastra **notchFX** a **Aplicaciones**.
-3. Primer arranque: como el app no está notarizado, haz **click derecho → Abrir** (una sola vez),
-   o permite el app en *Ajustes → Privacidad y seguridad*.
+### 🔋 Batería que te habla
 
-Para generar el DMG localmente:
+- Aviso elegante al **conectar el cargador**
+- Confirmación discreta cuando llega al **100%**
+- Alerta temprana cuando la batería se pone **crítica**
+- Las alertas aparecen, duran unos segundos y se retiran solas — cero interrupciones eternas
+
+### 🎯 Prioridad inteligente, estilo iPhone
+
+¿Estás mirando tu temporizador y llega una alerta importante?
+La alerta **toma el control del momento**, y cuando termina, tu contenido vuelve solo.
+Nunca pierdes información, nunca te saturan.
+
+### 👆 Gestos que se sienten físicos
+
+| Tu gesto | Qué pasa |
+|---|---|
+| **Click** | La isla se expande o colapsa con spring físico |
+| **Arrastrar hacia abajo** | Descartas lo que sea — con rubber-band y fade, como en iOS |
+| **Pasar el cursor** | Las esquinas reaccionan invitándote a tocar |
+| **Click fuera** | Todo se colapsa discretamente |
+
+### 🖥️ Funciona en *cualquier* Mac
+
+¿Tu Mac o monitor **no tiene muesca**? No importa: notchFX se convierte automáticamente
+en una **cápsula flotante** debajo de tu barra de menú. Elige pantalla automática,
+la de la muesca o la principal — todo desde el menú.
+
+### ⚙️ Simple de controlar
+
+Un ícono discreto en la barra de menú gobierna todo:
+
+- Modo de pantalla: automático / con muesca / principal
+- Cápsula flotante activada o desactivada
+- Gestos de descarte activados o desactivados
+- Duración de las alertas
+- Temporizador demo y alerta de prueba para verlo funcionar al instante
+
+Tus preferencias **se recuerdan entre sesiones**.
+
+### 🪶 Ligero, nativo y privado
+
+- 100% nativo en Swift/SwiftUI — se siente parte de macOS, no un overlay web
+- **Despierta con eventos del sistema**, no sondea constantemente tu CPU
+- Sin permisos invasivos, sin cuentas, sin telemetría, sin conexión a ningún servidor
+
+---
+
+## 📥 Instalación
+
+1. Descarga el DMG más reciente desde [Releases](https://github.com/sebastian-rgv/notchFX/releases)
+2. Abre el DMG y arrastra **notchFX** a Aplicaciones
+3. Primer arranque: click derecho → **Abrir** (una sola vez)
+
+> Requiere macOS 14.0 o posterior · MacBook con muesca, o cualquier Mac/monitor sin ella
+
+## 🗺️ Lo que viene
+
+| Próximamente | |
+|---|---|
+| 🎵 Now Playing con controles y visualizador | 📅 Siguiente evento del calendario |
+| 🔊 HUD de volumen y brillo | 🌙 Temas y personalización visual |
+| 🌐 Multi-idioma | ⬇️ Progreso de descargas |
+
+## 🛠️ Compilar desde el código fuente
 
 ```bash
-./Scripts/build_release.sh            # versión desde el último tag git
-./Scripts/build_release.sh 0.2.0      # o versión explícita
+git clone https://github.com/sebastian-rgv/notchFX.git
+cd notchFX
+swift build && swift test     # compilar y probar
+open notchFX.xcodeproj        # o abrirlo en Xcode (⌘R)
 ```
 
-Cada tag `v*` que se pushea dispara el workflow de release y publica el DMG
-automáticamente en GitHub Releases.
-
-## Requisitos
-
-- macOS 14.0+
-- Xcode 16+ para compilar
-
-## Compilar
+Generar el DMG instalable:
 
 ```bash
-open notchFX.xcodeproj
+./Scripts/build_release.sh
 ```
 
-Y ejecuta el scheme `notchFX` (⌘R).
+## 🤝 Créditos
 
-O desde consola:
+Diseñado y desarrollado por [@sebastian-rgv](https://github.com/sebastian-rgv).
 
-```bash
-xcodebuild -project notchFX.xcodeproj -scheme notchFX -destination 'platform=macOS' build
-```
-
-## Tests
-
-```bash
-xcodebuild -project notchFX.xcodeproj -scheme notchFX -destination 'platform=macOS' test
-```
-
-## Arquitectura
-
-```
-notchFX/
-├── App/              # Entry point + AppDelegate (AppKit-first) + menú de barra
-├── Core/
-│   ├── State/        # NotchState tipado (enum con valores asociados) + modelo observable
-│   ├── Engine/       # Scheduler de prioridades (array ordenado, preempt, expiración) + GestureMath
-│   ├── Services/     # Batería (IOKit push), timer local
-│   ├── Settings/     # Config Codable parse-once con fallback a defaults seguros
-│   └── Windowing/    # Panel overlay no activador + resolución de pantalla y estilo
-└── UI/               # Superficie animada (springs), gestos y contenidos por actividad
-
-Interacción: click para expandir/colapsar, arrastrar hacia abajo para descartar
-(rubber-band + fade), hover deforma las esquinas como affordance, click fuera colapsa.
-
-Pantallas sin muesca: la superficie se convierte automáticamente en una **cápsula
-flotante** debajo de la barra de menú (también forzable desde el menú). Selección de
-pantalla automática / con muesca / principal. La configuración se persiste como un solo
-blob `Codable` que se parsea una vez al inicio; si está corrupto, cae a defaults seguros.
-```
-
-Principios: estados modelados con tipos (no strings), transiciones validadas por el
-compilador vía `switch` exhaustivo, geometría como funciones puras sin AppKit.
-
-## Licencia
+## 📄 Licencia
 
 TBD
