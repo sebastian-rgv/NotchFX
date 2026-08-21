@@ -20,8 +20,18 @@ fi
 
 rm -rf "$STAGING" "$DMG_PATH"
 mkdir -p "$STAGING/$APP_NAME.app/Contents/MacOS"
+mkdir -p "$STAGING/$APP_NAME.app/Contents/Resources"
 
 cp .build/release/notchFXApp "$STAGING/$APP_NAME.app/Contents/MacOS/notchFX"
+
+if [[ -f "Packaging/Resources/notchFX.icns" ]]; then
+    cp Packaging/Resources/notchFX.icns "$STAGING/$APP_NAME.app/Contents/Resources/"
+else
+    echo "⚠ Ícono no encontrado (Packaging/Resources/notchFX.icns); generando..."
+    swift Scripts/make_icon.swift dist/AppIcon.iconset/icon_512x512@2x.png
+    iconutil -c icns dist/AppIcon.iconset -o Packaging/Resources/notchFX.icns
+    cp Packaging/Resources/notchFX.icns "$STAGING/$APP_NAME.app/Contents/Resources/"
+fi
 
 sed \
     -e "s/@VERSION@/$VERSION/g" \

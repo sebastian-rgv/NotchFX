@@ -8,6 +8,8 @@
 	<string>notchFX</string>
 	<key>CFBundleExecutable</key>
 	<string>notchFX</string>
+	<key>CFBundleIconFile</key>
+	<string>notchFX</string>
 	<key>CFBundleIdentifier</key>
 	<string>dev.notchfx.notchFX</string>
 	<key>CFBundleInfoDictionaryVersion</key>
