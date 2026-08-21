@@ -75,7 +75,17 @@ Tus preferencias **se recuerdan entre sesiones**.
 
 1. Descarga el DMG más reciente desde [Releases](https://github.com/sebastian-rgv/notchFX/releases)
 2. Abre el DMG y arrastra **notchFX** a Aplicaciones
-3. Primer arranque: click derecho → **Abrir** (una sola vez)
+3. Al primer arranque, macOS mostrará *"Apple could not verify..."*:
+
+   **Opción rápida (terminal):**
+   ```bash
+   xattr -cr /Applications/notchFX.app
+   open /Applications/notchFX.app
+   ```
+
+   **Opción gráfica:** intenta abrirlo, pulsa *OK*, luego ve a
+   **Ajustes del Sistema → Privacidad y seguridad → "Open Anyway"**,
+   autentica y abre. Solo pasa la primera vez.
 
 > Requiere macOS 14.0 o posterior · MacBook con muesca, o cualquier Mac/monitor sin ella
 
