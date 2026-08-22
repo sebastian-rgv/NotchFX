@@ -35,7 +35,7 @@ struct NotchRootView: View {
             style: surfaceStyle,
             content: AnyView(
                 content(for: activity, expanded: isExpanded)
-                    .transition(.opacity)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
             )
         )
         .notchGestures(

@@ -34,6 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         engine: engine,
         settingsModel: settingsModel
     )
+    private lazy var settingsWindow = SettingsWindowController(
+        settingsModel: settingsModel
+    )
 
     private var batteryService: BatteryMonitorService?
     private var statusItem: NSStatusItem?
@@ -66,6 +69,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let menu = NSMenu()
         menu.delegate = self
+
+        let settings = NSMenuItem(
+            title: "Ajustes…",
+            action: #selector(openSettings),
+            keyEquivalent: ","
+        )
+        settings.target = self
+        menu.addItem(settings)
+        menu.addItem(.separator())
 
         menu.addItem(withTitle: "Temporizador demo (10 s)", action: #selector(startDemoTimer), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Alerta de prueba", action: #selector(emitTestAlert), keyEquivalent: "").target = self
@@ -154,6 +166,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     // MARK: - Demo actions
+
+    @objc private func openSettings() {
+        settingsWindow.present()
+    }
 
     @objc private func startDemoTimer() {
         timerController.start(duration: 10)
