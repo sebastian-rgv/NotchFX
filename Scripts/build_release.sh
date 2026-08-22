@@ -51,4 +51,6 @@ hdiutil create \
     -format UDZO \
     "$DMG_PATH"
 
+rm -rf "$STAGING"
+
 echo "✔ Listo: $DMG_PATH"
