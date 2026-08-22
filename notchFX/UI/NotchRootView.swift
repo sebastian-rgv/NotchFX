@@ -21,6 +21,11 @@ struct NotchRootView: View {
         )
         .animation(.notchMorph, value: stateModel.state)
         .animation(.notchShowHide, value: stateModel.state.isPresented)
+        .onReceive(NotificationCenter.default.publisher(for: .notchTapReceived)) { _ in
+            guard case .compact = stateModel.state else { return }
+            nfxTrace("TAP NATIVO -> expand")
+            stateModel.expand()
+        }
     }
 
     @ViewBuilder
@@ -43,7 +48,11 @@ struct NotchRootView: View {
             )
         )
         .notchGestures(
-            onTap: { stateModel.toggleExpanded() },
+            onTap: {
+                nfxTrace("TAP recibido (estado antes: \(stateModel.state))")
+                stateModel.toggleExpanded()
+                nfxTrace("estado después: \(stateModel.state)")
+            },
             onDismiss: settingsModel.settings.swipeDismissEnabled
                 ? { engine.dismissTop() }
                 : {}
@@ -116,6 +125,21 @@ extension NotchRootView {
             handle.closeFile()
         } else {
             try? line.write(toFile: "/tmp/nfx_render.log", atomically: true, encoding: .utf8)
+        }
+    }
+}
+
+
+extension NotchRootView {
+    static func appendEventLog(_ message: String) {
+        guard ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" else { return }
+        let line = "\(Date()) \(message)\n"
+        if let handle = FileHandle(forWritingAtPath: "/tmp/nfx_events.log") {
+            handle.seekToEndOfFile()
+            handle.write(line.data(using: .utf8)!)
+            handle.closeFile()
+        } else {
+            try? line.write(toFile: "/tmp/nfx_events.log", atomically: true, encoding: .utf8)
         }
     }
 }

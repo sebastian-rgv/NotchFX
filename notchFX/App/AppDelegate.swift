@@ -1,8 +1,14 @@
 import AppKit
 
+func nfxTrace(_ message: String) {
+    guard ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" else { return }
+    print("TRACE-" + message)
+}
+
 @main
 final class AppMain {
     static func main() {
+        setbuf(__stdoutp, nil)
         MainActor.assumeIsolated {
             let app = NSApplication.shared
             let delegate = AppDelegate()
@@ -51,7 +57,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var outsideClickMonitor: Any?
 
+    private var clickMonitor: Any?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" {
+            clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+                let location = NSEvent.mouseLocation
+                var tappedIsland = false
+
+                if let self, self.panelController.isPointOverIsland(location) {
+                    tappedIsland = true
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .notchTapReceived, object: nil)
+                    }
+                }
+
+                if ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" {
+                    let line = "\(Date()) GLOBAL click \(location) isla=\(tappedIsland)"
+                    if let handle = FileHandle(forWritingAtPath: "/tmp/nfx_events.log") {
+                        handle.seekToEndOfFile()
+                        handle.write(line.data(using: .utf8)!)
+                        handle.closeFile()
+                    } else {
+                        try? line.write(toFile: "/tmp/nfx_events.log", atomically: true, encoding: .utf8)
+                    }
+                }
+                _ = event
+            }
+        }
+
         let others = NSRunningApplication.runningApplications(
             withBundleIdentifier: "dev.notchfx.notchFX"
         ).filter { $0 != NSRunningApplication.current }
@@ -64,8 +98,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         startBatteryMonitoring()
         installOutsideClickMonitor()
         nowPlayingController.start()
-        cameraMonitor.start()
+        // CAMERA_TEST_OFF cameraMonitor.start()
+        nfxTrace("DIDLOAD llamando a show()")
         panelController.show()
+        nfxTrace("DIDLOAD show() completado")
 
     }
 

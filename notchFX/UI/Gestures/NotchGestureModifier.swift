@@ -1,5 +1,9 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let notchTapReceived = Notification.Name("notch.tap.received")
+}
+
 extension Animation {
     static let notchMorph = Animation.spring(duration: 0.45, bounce: 0.32)
     static let notchCollapse = Animation.spring(duration: 0.38, bounce: 0.14)
