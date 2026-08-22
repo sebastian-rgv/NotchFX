@@ -22,7 +22,11 @@ struct NotchSurface: View {
     var body: some View {
         ZStack(alignment: .top) {
             surfaceShape
-                .fill(.black)
+                .fill(surfaceGradient)
+            surfaceShape
+                .fill(topShine)
+            surfaceShape
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
             content
                 .frame(width: width, height: height)
                 .clipped()
@@ -43,5 +47,28 @@ struct NotchSurface: View {
                 bottomTrailing: cornerRadius
             ))
         }
+    }
+
+    private var surfaceGradient: LinearGradient {
+        LinearGradient(
+            stops: [
+                Gradient.Stop(color: Color(white: 0.14), location: 0),
+                Gradient.Stop(color: Color(white: 0.04), location: 0.45),
+                Gradient.Stop(color: .black, location: 1)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var topShine: LinearGradient {
+        LinearGradient(
+            colors: [
+                .white.opacity(0.09),
+                .clear
+            ],
+            startPoint: .top,
+            endPoint: UnitPoint(x: 0.5, y: 0.4)
+        )
     }
 }

@@ -75,4 +75,38 @@ struct NotchSettingsTests {
         let reloaded = SettingsStore(defaults: defaults).load()
         #expect(reloaded.displayMode == .notchedScreen)
     }
+
+    @Test func updateClampsInvalidDuration() {
+        let model = SettingsModel(store: SettingsStore(defaults: makeDefaults(name: "clamp")))
+
+        model.update { $0.alertDuration = 99 }
+        #expect(model.settings.alertDuration == 15)
+
+        model.update { $0.alertDuration = 0 }
+        #expect(model.settings.alertDuration == 2)
+
+        model.update { $0.alertDuration = 7 }
+        #expect(model.settings.alertDuration == 7)
+    }
+
+    @Test func updateTransformsSurfaceStyle() {
+        let defaults = makeDefaults(name: "style")
+        let model = SettingsModel(store: SettingsStore(defaults: defaults))
+
+        model.update { $0.surfaceStyle = .capsule }
+        #expect(model.settings.surfaceStyle == .capsule)
+
+        model.update { $0.surfaceStyle = .notch }
+        #expect(model.settings.surfaceStyle == .notch)
+        #expect(SettingsStore(defaults: defaults).load().surfaceStyle == .notch)
+    }
+
+    @Test func updatePersistsSwipeDismiss() {
+        let defaults = makeDefaults(name: "swipe")
+        let model = SettingsModel(store: SettingsStore(defaults: defaults))
+
+        model.update { $0.swipeDismissEnabled = false }
+        #expect(model.settings.swipeDismissEnabled == false)
+        #expect(SettingsStore(defaults: defaults).load().swipeDismissEnabled == false)
+    }
 }
