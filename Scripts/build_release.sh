@@ -11,12 +11,8 @@ APP_NAME="notchFX"
 STAGING="$ROOT/dist/staging"
 DMG_PATH="$ROOT/dist/notchFX-$VERSION.dmg"
 
-if [[ ! -f ".build/release/notchFXApp" ]]; then
-    echo "▶ Compilando binario release..."
-    swift build -c release
-else
-    echo "▶ Reusando binario existente (.build/release/notchFXApp); borra .build para recompilar."
-fi
+echo "▶ Compilando binario release..."
+swift build -c release
 
 rm -rf "$STAGING" "$DMG_PATH"
 mkdir -p "$STAGING/$APP_NAME.app/Contents/MacOS"

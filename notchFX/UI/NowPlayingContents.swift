@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NowPlayingCompactContent: View {
     let display: NowPlayingDisplay
+    var artwork: NSImage? = nil
 
     private var snapshotValue: NowPlayingSnapshot {
         NowPlayingSnapshot(
@@ -33,8 +34,16 @@ struct NowPlayingCompactContent: View {
             ZStack(alignment: .bottomLeading) {
                 CompactShoulderLayout(
                     leading: {
-                        EqualizerBars(isPlaying: display.isPlaying, maxHeight: 15)
-                            .frame(width: 34)
+                        if let artwork {
+                            Image(nsImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 22, height: 22)
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        } else {
+                            EqualizerBars(isPlaying: display.isPlaying, maxHeight: 15)
+                                .frame(width: 34)
+                        }
                     },
                     trailing: {
                         Text("-" + NowPlayingLogic.formatClock(remaining))
@@ -55,6 +64,7 @@ struct NowPlayingCompactContent: View {
 
 struct NowPlayingExpandedContent: View {
     let display: NowPlayingDisplay
+    var artwork: NSImage? = nil
     let onTogglePlayPause: () -> Void
     let onNext: () -> Void
     let onPrevious: () -> Void
@@ -109,8 +119,16 @@ struct NowPlayingExpandedContent: View {
     private var headerRow: some View {
         HStack(spacing: 12) {
             Button(action: onOpenSourceApp) {
-                EqualizerBars(isPlaying: display.isPlaying, maxHeight: 26)
-                    .frame(width: 34)
+                if let artwork {
+                    Image(nsImage: artwork)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    EqualizerBars(isPlaying: display.isPlaying, maxHeight: 26)
+                        .frame(width: 34)
+                }
             }
             .buttonStyle(.plain)
 

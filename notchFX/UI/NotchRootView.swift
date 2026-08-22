@@ -64,6 +64,7 @@ struct NotchRootView: View {
             if expanded {
                 NowPlayingExpandedContent(
                     display: display,
+                    artwork: nowPlaying.artwork,
                     onTogglePlayPause: { nowPlaying.togglePlayPause() },
                     onNext: { nowPlaying.nextTrack() },
                     onPrevious: { nowPlaying.previousTrack() },
@@ -71,7 +72,7 @@ struct NotchRootView: View {
                     onOpenSourceApp: { nowPlaying.openSourceApp() }
                 )
             } else {
-                NowPlayingCompactContent(display: display)
+                NowPlayingCompactContent(display: display, artwork: nowPlaying.artwork)
             }
 
         case .timer(let endDate):

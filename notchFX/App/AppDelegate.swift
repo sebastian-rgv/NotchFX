@@ -32,6 +32,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var nowPlayingController = NowPlayingActivityController(
         engine: engine
     )
+    private lazy var cameraMonitor = CameraMonitor { [weak self] inUse in
+        MainActor.assumeIsolated {
+            self?.handleCamera(inUse: inUse)
+        }
+    }
     private lazy var panelController = NotchPanelController(
         stateModel: stateModel,
         engine: engine,
@@ -47,10 +52,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var outsideClickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let others = NSRunningApplication.runningApplications(
+            withBundleIdentifier: "dev.notchfx.notchFX"
+        ).filter { $0 != NSRunningApplication.current }
+
+        for stale in others.dropFirst() {
+            stale.terminate()
+        }
+
         installStatusItem()
         startBatteryMonitoring()
         installOutsideClickMonitor()
         nowPlayingController.start()
+        cameraMonitor.start()
         panelController.show()
 
     }
@@ -207,6 +221,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         service.start()
         batteryService = service
+    }
+
+    private func handleCamera(inUse: Bool) {
+        let id = ActivityID(rawValue: "camera.indicator")
+
+        if inUse {
+            engine.present(
+                NotchActivity(
+                    id: id,
+                    kind: .camera,
+                    detail: .info(symbol: "video.fill", label: "Cámara en uso")
+                ),
+                priority: .critical
+            )
+        } else {
+            engine.finish(id)
+        }
     }
 
     private func handleBatteryEvent(_ event: BatteryEvent) {

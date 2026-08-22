@@ -13,7 +13,10 @@ final class NowPlayingActivityController: ObservableObject {
     private let engine: ActivityEngine
 
     @Published private(set) var display: NowPlayingDisplay?
+    @Published private(set) var artwork: NSImage?
+
     private var pausedSince: Date?
+    private var lastArtworkTrackKey: String?
     private var activeProvider: ProviderKind = .scripted
 
     private lazy var adapterProvider = MediaRemoteAdapterProvider { [weak self] snapshot in
@@ -137,6 +140,8 @@ final class NowPlayingActivityController: ObservableObject {
             return
         }
 
+        refreshArtworkIfNeeded(for: snapshot)
+
         let detail = NowPlayingDisplay(
             title: snapshot.title.isEmpty ? "Unknown track" : snapshot.title,
             artist: snapshot.artist.isEmpty ? "Unknown artist" : snapshot.artist,
@@ -154,6 +159,17 @@ final class NowPlayingActivityController: ObservableObject {
         )
 
         display = detail
+    }
+
+    private func refreshArtworkIfNeeded(for snapshot: NowPlayingSnapshot) {
+        let trackKey = "\(snapshot.title)|\(snapshot.artist)"
+
+        guard activeProvider == .adapter, trackKey != lastArtworkTrackKey else { return }
+        lastArtworkTrackKey = trackKey
+
+        adapterProvider.fetchArtwork { [weak self] image in
+            self?.artwork = image
+        }
     }
 
     private func hideIfVisible() {

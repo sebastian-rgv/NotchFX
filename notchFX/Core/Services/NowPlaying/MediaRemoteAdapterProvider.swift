@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 enum AdapterPayloadParser {
@@ -91,6 +92,18 @@ final class MediaRemoteAdapterProvider {
         self.handler = handler
     }
 
+    private static func trace(_ message: String) {
+        guard ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" else { return }
+        let line = "\(Date()) \(message)\n"
+        if let handle = FileHandle(forWritingAtPath: "/tmp/nfx_debug.log") {
+            handle.seekToEndOfFile()
+            handle.write(line.data(using: .utf8)!)
+            handle.closeFile()
+        } else {
+            try? line.write(toFile: "/tmp/nfx_debug.log", atomically: true, encoding: .utf8)
+        }
+    }
+
     static func resourcePath(_ relative: String) -> String? {
         guard let resources = Bundle.main.resourceURL else { return nil }
         let url = resources.appendingPathComponent(relative)
@@ -98,13 +111,11 @@ final class MediaRemoteAdapterProvider {
     }
 
     func isAvailable() -> Bool {
-        guard
-            let scriptPath,
-            let frameworkPath,
-            FileManager.default.isExecutableFile(atPath: perlPath)
-        else {
-            return false
-        }
+        let pathsOk = scriptPath != nil && frameworkPath != nil
+            && FileManager.default.isExecutableFile(atPath: perlPath)
+        Self.trace("isAvailable pathsOk=\(pathsOk) script=\(scriptPath ?? "nil") framework=\(frameworkPath ?? "nil")")
+
+        guard pathsOk, let scriptPath, let frameworkPath else { return false }
 
         guard let testClientPath else {
             return runSync(arguments: [scriptPath, frameworkPath, "test"]) == 0
@@ -142,15 +153,20 @@ final class MediaRemoteAdapterProvider {
         do {
             try process.run()
         } catch {
+            Self.trace("stream ERROR al lanzar: \(error)")
             DispatchQueue.main.async { onData(nil) }
             return
         }
 
         streamProcess = process
+        Self.trace("stream proceso lanzado pid=\(process.processIdentifier)")
 
-        DispatchQueue.global(qos: .utility).async { [weak process] in
+        DispatchQueue.global(qos: .utility).async { [weak self, weak process] in
             let fileHandle = pipe.fileHandleForReading
             var buffer = Data()
+            var lineCount = 0
+
+            Self.trace("stream lector iniciado")
 
             while true {
                 guard let process, process.isRunning else { break }
@@ -161,6 +177,11 @@ final class MediaRemoteAdapterProvider {
                 while let newlineIndex = buffer.firstIndex(of: 0x0A) {
                     let line = buffer.subdata(in: buffer.startIndex..<newlineIndex)
                     buffer.removeSubrange(buffer.startIndex...newlineIndex)
+
+                    lineCount += 1
+                    if lineCount <= 3 {
+                        Self.trace("stream línea \(lineCount): \(line.prefix(120))")
+                    }
 
                     guard !line.isEmpty,
                           let snapshot = AdapterPayloadParser.parse(
@@ -174,6 +195,8 @@ final class MediaRemoteAdapterProvider {
                     }
                 }
             }
+
+            Self.trace("stream lector terminado (líneas: \(lineCount))")
         }
     }
 
@@ -189,6 +212,47 @@ final class MediaRemoteAdapterProvider {
 
     func seek(to seconds: Double) {
         runAdapterCommand(["seek", String(Int(max(0, seconds) * 1_000_000))])
+    }
+
+    func fetchArtwork(completion: @escaping (NSImage?) -> Void) {
+        guard
+            let scriptPath,
+            let frameworkPath,
+            FileManager.default.isExecutableFile(atPath: perlPath)
+        else {
+            DispatchQueue.main.async { completion(nil) }
+            return
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: perlPath)
+        process.arguments = [scriptPath, frameworkPath, "get"]
+        process.standardError = FileHandle.nullDevice
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        process.terminationHandler = { _ in
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+
+            guard
+                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let base64 = object["artworkData"] as? String,
+                let imageData = Data(base64Encoded: base64),
+                let image = NSImage(data: imageData)
+            else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+
+            DispatchQueue.main.async { completion(image) }
+        }
+
+        do {
+            try process.run()
+        } catch {
+            DispatchQueue.main.async { completion(nil) }
+        }
     }
 
     private func runAdapterCommand(_ arguments: [String]) {
