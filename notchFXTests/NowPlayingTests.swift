@@ -85,7 +85,7 @@ struct NowPlayingLogicTests {
 struct ScriptedMediaParsingTests {
     @Test func parsesFullResponse() {
         let now = Date()
-        let output = "Bohemian Rhapsody|Queen|354|42|playing"
+        let output = "Bohemian Rhapsody|Queen|354000|42|playing"
 
         let parsed = ScriptedMediaProvider.parseResponse(output, source: .spotify, now: now)
 
@@ -95,6 +95,22 @@ struct ScriptedMediaParsingTests {
         #expect(parsed?.elapsed == 42)
         #expect(parsed?.isPlaying == true)
         #expect(parsed?.rate == 1)
+    }
+
+    @Test func spotifyDurationConvertsFromMilliseconds() {
+        let parsed = ScriptedMediaProvider.parseResponse(
+            "Song|Artist|215693|57|playing",
+            source: .spotify,
+            now: Date()
+        )
+        #expect(parsed?.duration == 215.693)
+
+        let musicParsed = ScriptedMediaProvider.parseResponse(
+            "Song|Artist|215|57|playing",
+            source: .appleMusic,
+            now: Date()
+        )
+        #expect(musicParsed?.duration == 215)
     }
 
     @Test func parsesPausedState() {
