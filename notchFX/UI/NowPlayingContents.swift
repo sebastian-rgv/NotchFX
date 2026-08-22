@@ -34,15 +34,17 @@ struct NowPlayingCompactContent: View {
             ZStack(alignment: .bottomLeading) {
                 CompactShoulderLayout(
                     leading: {
-                        if let artwork {
-                            Image(nsImage: artwork)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 22, height: 22)
-                                .clipShape(RoundedRectangle(cornerRadius: 5))
-                        } else {
-                            EqualizerBars(isPlaying: display.isPlaying, maxHeight: 15)
-                                .frame(width: 34)
+                        HStack(spacing: 7) {
+                            if let artwork {
+                                Image(nsImage: artwork)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 20, height: 20)
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            }
+
+                            EqualizerBars(isPlaying: display.isPlaying, maxHeight: 13)
+                                .frame(width: 28)
                         }
                     },
                     trailing: {
