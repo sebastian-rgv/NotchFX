@@ -23,7 +23,6 @@ final class ScriptedMediaProvider {
     }
 
     func start() {
-        try? "started".write(toFile: "/tmp/nfx_debug_start", atomically: true, encoding: .utf8)
         guard pollTimer == nil else { return }
 
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -91,21 +90,8 @@ final class ScriptedMediaProvider {
     }
 
     private func poll() {
-        try? Date().description.write(toFile: "/tmp/nfx_debug_poll", atomically: true, encoding: .utf8)
-
         for target in Self.targets where isBundleRunning(target.bundleID) {
-            try? target.bundleID.write(
-                toFile: "/tmp/nfx_debug_target",
-                atomically: true,
-                encoding: .utf8
-            )
-
             if let output = query(target: target) {
-                try? output.write(
-                    toFile: "/tmp/nfx_debug_query",
-                    atomically: true,
-                    encoding: .utf8
-                )
                 if let snapshot = Self.parseResponse(output, source: target.source, now: Date()) {
                     lastSnapshot = snapshot
                     handler(snapshot)
@@ -181,22 +167,9 @@ final class ScriptedMediaProvider {
     }
 
     private func runOSA(_ source: String) -> String? {
-        try? source.write(
-            toFile: "/tmp/nfx_debug_script",
-            atomically: true,
-            encoding: .utf8
-        )
         guard let script = NSAppleScript(source: source) else { return nil }
         var error: NSDictionary?
         let result = script.executeAndReturnError(&error)
-        if let error {
-            try? error.description.write(
-                toFile: "/tmp/nfx_debug_error",
-                atomically: true,
-                encoding: .utf8
-            )
-            return nil
-        }
-        return result.stringValue
+        return error == nil ? result.stringValue : nil
     }
 }
