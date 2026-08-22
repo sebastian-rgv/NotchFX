@@ -145,11 +145,14 @@ final class ScriptedMediaProvider {
         let rawState = parts[4].lowercased()
         let isPlaying = rawState.contains("playing")
 
+        let rawDuration = Double(parts[2]) ?? 0
+        let duration = source == .spotify ? rawDuration / 1000 : rawDuration
+
         return NowPlayingSnapshot(
             title: title,
             artist: parts[1],
             album: nil,
-            duration: Double(parts[2]) ?? 0,
+            duration: duration,
             elapsed: Double(parts[3]) ?? 0,
             rate: isPlaying ? 1 : 0,
             timestamp: now,
