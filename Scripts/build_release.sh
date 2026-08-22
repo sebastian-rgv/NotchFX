@@ -38,13 +38,13 @@ sed \
     -e "s/@BUILD@/${BUILD:-1}/g" \
     Packaging/Info.plist > "$STAGING/$APP_NAME.app/Contents/Info.plist"
 
-SIGN_IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null | grep "Apple Development" | awk '{print $2}' | head -1)}"
+SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk '/Apple Development/{print $2}' | head -1 || true)"
 
-if [[ -n "$SIGN_IDENTITY" ]]; then
+if [[ -n "${SIGN_IDENTITY:-}" ]]; then
     echo "▶ Firmando con identidad: $SIGN_IDENTITY"
     codesign --force --sign "$SIGN_IDENTITY" "$STAGING/$APP_NAME.app"
 else
-    echo "▶ Sin identidad de desarrollo; firmando ad-hoc..."
+    echo "▶ Sin identidad de desarrollo disponible; firmando ad-hoc..."
     codesign --force --sign - "$STAGING/$APP_NAME.app"
 fi
 
