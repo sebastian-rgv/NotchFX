@@ -1,96 +1,130 @@
 import SwiftUI
 
+enum SettingsSection: String, CaseIterable, Identifiable {
+    case general
+    case island
+    case media
+    case gestures
+    case about
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .island: return "Isla"
+        case .media: return "Música"
+        case .gestures: return "Gestos"
+        case .about: return "Acerca de"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .general: return "gearshape.fill"
+        case .island: return "rectangle.inset.filled"
+        case .media: return "music.note"
+        case .gestures: return "hand.draw.fill"
+        case .about: return "info.circle.fill"
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var settingsModel: SettingsModel
+    @State private var selectedSection: SettingsSection = .general
 
     private var appVersion: String {
-        let short = Bundle.main.object(
-            forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String
-        return short ?? "0.1.1"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2"
     }
 
     var body: some View {
-        Form {
-            Section("Pantalla") {
-                Picker("Pantalla activa", selection: displayModeBinding) {
-                    Text("Automática").tag(NotchSettings.DisplayMode.auto)
-                    Text("Con muesca").tag(NotchSettings.DisplayMode.notchedScreen)
-                    Text("Principal").tag(NotchSettings.DisplayMode.mainScreen)
-                }
-                .pickerStyle(.segmented)
-
-                Toggle(isOn: capsuleBinding) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Cápsula flotante")
-                        Text("Isla redondeada independiente bajo la barra de menú, incluso con muesca.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Section("Gestos") {
-                Toggle(isOn: swipeDismissBinding) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Deslizar para descartar")
-                        Text("Arrastra la isla hacia abajo para cerrar la actividad actual.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Section("Alertas") {
-                HStack(spacing: 12) {
-                    Text("Duración")
-                    Slider(value: alertDurationBinding, in: 2...15, step: 1)
-                    Text("\(Int(settingsModel.settings.alertDuration)) s")
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .frame(width: 38, alignment: .trailing)
-                }
-            }
-
-            Section("Acerca de") {
-                LabeledContent("notchFX", value: "v\(appVersion)")
-                Text("Bring your notch to life. Isla dinámica nativa para tu MacBook, ligera y privada.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+        HStack(spacing: 0) {
+            sidebar
+            Divider()
+            detailPane
         }
-        .formStyle(.grouped)
-        .frame(width: 420)
+        .frame(width: 620, height: 400)
         .preferredColorScheme(.dark)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
-    private var displayModeBinding: Binding<NotchSettings.DisplayMode> {
-        Binding(
-            get: { settingsModel.settings.displayMode },
-            set: { newValue in settingsModel.update { $0.displayMode = newValue } }
-        )
-    }
-
-    private var capsuleBinding: Binding<Bool> {
-        Binding(
-            get: { settingsModel.settings.surfaceStyle == .capsule },
-            set: { isOn in
-                settingsModel.update { $0.surfaceStyle = isOn ? .capsule : .notch }
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(SettingsSection.allCases) { section in
+                SidebarRow(
+                    title: section.title,
+                    symbolName: section.symbolName,
+                    isSelected: selectedSection == section
+                )
+                .onTapGesture {
+                    selectedSection = section
+                }
             }
-        )
+
+            Spacer()
+        }
+        .padding(.top, 12)
+        .padding(.horizontal, 8)
+        .frame(width: 150)
+        .background(Color.black.opacity(0.25))
     }
 
-    private var swipeDismissBinding: Binding<Bool> {
-        Binding(
-            get: { settingsModel.settings.swipeDismissEnabled },
-            set: { isOn in settingsModel.update { $0.swipeDismissEnabled = isOn } }
-        )
+    @ViewBuilder
+    private var detailPane: some View {
+        ScrollView {
+            Group {
+                switch selectedSection {
+                case .general:
+                    GeneralPane(settingsModel: settingsModel)
+                case .island:
+                    IslandPane(settingsModel: settingsModel)
+                case .media:
+                    MediaPane()
+                case .gestures:
+                    GesturesPane(settingsModel: settingsModel)
+                case .about:
+                    AboutPane(version: appVersion)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
 
-    private var alertDurationBinding: Binding<Double> {
-        Binding(
-            get: { settingsModel.settings.alertDuration },
-            set: { newValue in settingsModel.update { $0.alertDuration = newValue } }
+private struct SidebarRow: View {
+    let title: String
+    let symbolName: String
+    let isSelected: Bool
+
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: symbolName)
+                .font(.system(size: 12))
+                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.75))
+                .frame(width: 18)
+
+            Text(title)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(.white.opacity(isSelected ? 1 : 0.8))
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(
+                    isSelected
+                        ? Color.accentColor.opacity(0.85)
+                        : hovering ? Color.white.opacity(0.08) : .clear
+                )
         )
+        .onHover { hovering = $0 }
+        .contentShape(Rectangle())
     }
 }

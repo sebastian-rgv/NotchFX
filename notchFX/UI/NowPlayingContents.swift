@@ -3,54 +3,53 @@ import SwiftUI
 struct NowPlayingCompactContent: View {
     let display: NowPlayingDisplay
 
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .bottomLeading) {
-                HStack(spacing: 8) {
-                    EqualizerBars(isPlaying: display.isPlaying, maxHeight: 13)
+    private var snapshotValue: NowPlayingSnapshot {
+        NowPlayingSnapshot(
+            title: display.title,
+            artist: display.artist,
+            album: nil,
+            duration: display.duration,
+            elapsed: display.elapsedAtTimestamp,
+            rate: display.rate,
+            timestamp: display.timestamp,
+            isPlaying: display.isPlaying,
+            source: display.source
+        )
+    }
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        MonochromeMarqueeText(
-                            text: display.title,
-                            font: .system(size: 10, weight: .medium),
-                            nsFont: .systemFont(ofSize: 10, weight: .medium),
-                            color: .white.opacity(0.88)
-                        )
-                        MonochromeMarqueeText(
-                            text: display.artist,
-                            font: .system(size: 9, weight: .regular),
-                            nsFont: .systemFont(ofSize: 9),
-                            color: .white.opacity(0.45)
-                        )
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .padding(.leading, 16)
-                .padding(.trailing, 14)
-
-                Capsule()
-                    .fill(Color.white.opacity(0.55))
-                    .frame(width: max(8, geometry.size.width * progress), height: 2)
-            }
-        }
+    private var remaining: Double {
+        max(0, display.duration - NowPlayingLogic.currentElapsed(
+            snapshot: snapshotValue,
+            at: Date()
+        ))
     }
 
     private var progress: Double {
-        NowPlayingLogic.progress(
-            snapshot: NowPlayingSnapshot(
-                title: display.title,
-                artist: display.artist,
-                album: nil,
-                duration: display.duration,
-                elapsed: display.elapsedAtTimestamp,
-                rate: display.rate,
-                timestamp: display.timestamp,
-                isPlaying: display.isPlaying,
-                source: .spotify
-            ),
-            at: Date()
-        )
+        NowPlayingLogic.progress(snapshot: snapshotValue, at: Date())
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottomLeading) {
+                CompactShoulderLayout(
+                    leading: {
+                        EqualizerBars(isPlaying: display.isPlaying, maxHeight: 15)
+                            .frame(width: 34)
+                    },
+                    trailing: {
+                        Text("-" + NowPlayingLogic.formatClock(remaining))
+                            .font(.system(size: 11, weight: .medium))
+                            .monospacedDigit()
+                            .foregroundStyle(.white.opacity(0.7))
+                            .lineLimit(1)
+                    }
+                )
+
+                Capsule()
+                    .fill(Color.white.opacity(0.6))
+                    .frame(width: max(10, geometry.size.width * progress), height: 2.5)
+            }
+        }
     }
 }
 
@@ -90,20 +89,20 @@ struct NowPlayingExpandedContent: View {
             rate: display.rate,
             timestamp: display.timestamp,
             isPlaying: display.isPlaying,
-            source: .spotify
+            source: display.source
         )
     }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: display.isPlaying ? 1 : 30)) { _ in
-            VStack(spacing: 10) {
+            VStack(spacing: 7) {
                 headerRow
                 scrubberSection
                 controlsRow
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 12)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 24)
+            .padding(.top, ScreenGeometry.notchClearance)
+            .padding(.bottom, 10)
         }
     }
 

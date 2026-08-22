@@ -8,6 +8,7 @@ struct NowPlayingDisplay: Equatable {
     let rate: Double
     let timestamp: Date
     let isPlaying: Bool
+    let source: NowPlayingSource
 }
 
 enum ActivityDetail: Equatable {

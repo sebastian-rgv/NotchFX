@@ -24,6 +24,9 @@ mkdir -p "$STAGING/$APP_NAME.app/Contents/Resources"
 
 cp .build/release/notchFXApp "$STAGING/$APP_NAME.app/Contents/MacOS/notchFX"
 
+mkdir -p "$STAGING/$APP_NAME.app/Contents/Resources/adapter"
+cp -R Packaging/adapter/. "$STAGING/$APP_NAME.app/Contents/Resources/adapter/"
+
 if [[ -f "Packaging/Resources/notchFX.icns" ]]; then
     cp Packaging/Resources/notchFX.icns "$STAGING/$APP_NAME.app/Contents/Resources/"
 else

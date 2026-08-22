@@ -6,6 +6,24 @@ final class ScriptedMediaProvider {
     private var pollTimer: Timer?
     private let handler: (NowPlayingSnapshot?) -> Void
     private(set) var lastSnapshot: NowPlayingSnapshot?
+    private let debugEnabled = ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1"
+
+    private func trace(_ message: String) {
+        guard debugEnabled else { return }
+        let line = "\(Date()) \(message)\n"
+        if let handle = FileHandle(forWritingAtPath: "/tmp/nfx_debug.log") {
+            handle.seekToEndOfFile()
+            handle.write(line.data(using: .utf8)!)
+            handle.closeFile()
+        } else {
+            try? line.write(toFile: "/tmp/nfx_debug.log", atomically: true, encoding: .utf8)
+        }
+    }
+
+    private func traceWrite(_ value: String, to path: String) {
+        guard debugEnabled else { return }
+        try? value.write(toFile: path, atomically: true, encoding: .utf8)
+    }
 
     private struct Target {
         let bundleID: String
@@ -23,13 +41,16 @@ final class ScriptedMediaProvider {
     }
 
     func start() {
+        trace("start llamado")
         guard pollTimer == nil else { return }
+        traceWrite("ok", to: "/tmp/nfx_debug_start")
 
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.poll()
             }
         }
+        trace("timer agendado")
     }
 
     func stop() {
@@ -91,7 +112,9 @@ final class ScriptedMediaProvider {
 
     private func poll() {
         for target in Self.targets where isBundleRunning(target.bundleID) {
+            trace("target vivo: \(target.bundleID)")
             if let output = query(target: target) {
+                traceWrite(output, to: "/tmp/nfx_debug_query")
                 if let snapshot = Self.parseResponse(output, source: target.source, now: Date()) {
                     lastSnapshot = snapshot
                     handler(snapshot)
@@ -167,9 +190,15 @@ final class ScriptedMediaProvider {
     }
 
     private func runOSA(_ source: String) -> String? {
-        guard let script = NSAppleScript(source: source) else { return nil }
+        guard let script = NSAppleScript(source: source) else {
+            trace("script nil")
+            return nil
+        }
         var error: NSDictionary?
         let result = script.executeAndReturnError(&error)
+        if let error {
+            trace("OSA ERROR: \(error.description)")
+        }
         return error == nil ? result.stringValue : nil
     }
 }

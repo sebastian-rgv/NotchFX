@@ -33,9 +33,13 @@ final class NotchPanelController {
             surfaceStyle: .notch,
             nowPlaying: nowPlaying
         ))
-        view.opaqueRectProvider = { [weak stateModel] in
+        view.opaqueRectProvider = { [weak stateModel, weak settingsModel] in
             guard let stateModel else { return .zero }
-            return ScreenGeometry.opaqueRectInWindow(for: stateModel.state)
+            return ScreenGeometry.opaqueRectInWindow(
+                for: stateModel.state,
+                islandWidth: settingsModel?.settings.islandWidth ?? ScreenGeometry.defaultCompactWidth,
+                islandHeight: settingsModel?.settings.islandHeight ?? ScreenGeometry.defaultCompactHeight
+            )
         }
 
         hostingView = view

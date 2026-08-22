@@ -7,11 +7,16 @@ enum ScreenGeometry {
     static let windowWidth: CGFloat = 400
     static let windowHeight: CGFloat = 180
 
-    static let compactWidth: CGFloat = 220
-    static let compactHeight: CGFloat = 36
+    static let defaultCompactWidth: CGFloat = 360
+    static let defaultCompactHeight: CGFloat = 46
+    static var compactWidth: CGFloat { defaultCompactWidth }
+    static var compactHeight: CGFloat { defaultCompactHeight }
 
-    static let expandedWidth: CGFloat = 340
-    static let expandedHeight: CGFloat = 132
+    static let expandedWidth: CGFloat = 380
+    static let expandedHeight: CGFloat = 152
+
+    static let notchClearance: CGFloat = 34
+    static let shoulderInset: CGFloat = 28
 
     static func isNotchedDisplay(topSafeAreaInset: CGFloat) -> Bool {
         topSafeAreaInset >= notchedDisplayMinimumTopSafeAreaInset
@@ -28,13 +33,15 @@ enum ScreenGeometry {
     }
 
     static func opaqueRectInWindow(
-        for state: NotchState
+        for state: NotchState,
+        islandWidth: CGFloat = defaultCompactWidth,
+        islandHeight: CGFloat = defaultCompactHeight
     ) -> CGRect {
         switch state {
         case .hidden:
             return .zero
         case .compact:
-            return topAnchoredRect(width: compactWidth, height: compactHeight)
+            return topAnchoredRect(width: islandWidth, height: islandHeight)
         case .expanded:
             return topAnchoredRect(width: expandedWidth, height: expandedHeight)
         }

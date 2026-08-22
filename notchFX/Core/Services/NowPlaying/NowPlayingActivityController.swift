@@ -1,17 +1,33 @@
+import AppKit
 import Foundation
 
 @MainActor
 final class NowPlayingActivityController: ObservableObject {
     static let activityID = ActivityID(rawValue: "nowplaying.session")
 
+    private enum ProviderKind {
+        case adapter
+        case scripted
+    }
+
     private let engine: ActivityEngine
-    private lazy var provider = ScriptedMediaProvider(handler: { [weak self] snapshot in
+
+    @Published private(set) var display: NowPlayingDisplay?
+    private var pausedSince: Date?
+    private var activeProvider: ProviderKind = .scripted
+
+    private lazy var adapterProvider = MediaRemoteAdapterProvider { [weak self] snapshot in
         MainActor.assumeIsolated {
             self?.handle(snapshot)
         }
-    })
+    }
 
-    @Published private(set) var display: NowPlayingDisplay?
+    private lazy var scriptedProvider = ScriptedMediaProvider { [weak self] snapshot in
+        MainActor.assumeIsolated {
+            self?.handle(snapshot)
+        }
+    }
+
     var isVisibleToUser: Bool { display != nil }
 
     init(engine: ActivityEngine) {
@@ -19,37 +35,104 @@ final class NowPlayingActivityController: ObservableObject {
     }
 
     func start() {
-        provider.start()
+        if adapterProvider.isAvailable() {
+            activeProvider = .adapter
+            adapterProvider.start { [weak self] snapshot in
+                MainActor.assumeIsolated {
+                    self?.handle(snapshot)
+                }
+            }
+        } else {
+            activeProvider = .scripted
+            scriptedProvider.start()
+        }
     }
 
     func stop() {
-        provider.stop()
+        switch activeProvider {
+        case .adapter:
+            adapterProvider.stop()
+        case .scripted:
+            scriptedProvider.stop()
+        }
         engine.finish(Self.activityID)
         display = nil
     }
 
     func togglePlayPause() {
-        provider.send(.togglePlayPause)
+        switch activeProvider {
+        case .adapter:
+            adapterProvider.send(commandID: "2")
+        case .scripted:
+            scriptedProvider.send(.togglePlayPause)
+        }
     }
 
     func nextTrack() {
-        provider.send(.nextTrack)
+        switch activeProvider {
+        case .adapter:
+            adapterProvider.send(commandID: "4")
+        case .scripted:
+            scriptedProvider.send(.nextTrack)
+        }
     }
 
     func previousTrack() {
-        provider.send(.previousTrack)
+        switch activeProvider {
+        case .adapter:
+            adapterProvider.send(commandID: "5")
+        case .scripted:
+            scriptedProvider.send(.previousTrack)
+        }
     }
 
     func seek(to seconds: Double) {
-        provider.seek(to: seconds)
+        switch activeProvider {
+        case .adapter:
+            adapterProvider.seek(to: seconds)
+        case .scripted:
+            scriptedProvider.seek(to: seconds)
+        }
     }
 
     func openSourceApp() {
-        provider.openSourceApp()
+        let bundleID: String?
+
+        switch display?.source {
+        case .spotify:
+            bundleID = "com.spotify.client"
+        case .appleMusic:
+            bundleID = "com.apple.Music"
+        default:
+            bundleID = nil
+        }
+
+        guard let bundleID,
+              let app = NSRunningApplication.runningApplications(
+                  withBundleIdentifier: bundleID
+              ).first
+        else { return }
+
+        app.activate()
     }
 
     private func handle(_ snapshot: NowPlayingSnapshot?) {
-        guard let snapshot, NowPlayingLogic.shouldShow(snapshot: snapshot, now: Date()) else {
+        guard let snapshot else {
+            hideIfVisible()
+            return
+        }
+
+        if snapshot.isPlaying {
+            pausedSince = nil
+        } else if pausedSince == nil {
+            pausedSince = Date()
+        }
+
+        let pauseGraceExpired = !snapshot.isPlaying && pausedSince.map {
+            Date().timeIntervalSince($0) > 6
+        } ?? false
+
+        guard !pauseGraceExpired else {
             hideIfVisible()
             return
         }
@@ -61,7 +144,8 @@ final class NowPlayingActivityController: ObservableObject {
             elapsedAtTimestamp: snapshot.elapsed,
             rate: snapshot.rate,
             timestamp: snapshot.timestamp,
-            isPlaying: snapshot.isPlaying
+            isPlaying: snapshot.isPlaying,
+            source: snapshot.source
         )
 
         engine.present(

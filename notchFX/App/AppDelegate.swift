@@ -52,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         installOutsideClickMonitor()
         nowPlayingController.start()
         panelController.show()
+
     }
 
     func applicationWillTerminate(_ notification: Notification) {

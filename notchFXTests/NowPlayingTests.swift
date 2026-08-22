@@ -131,3 +131,69 @@ struct ScriptedMediaParsingTests {
         )
     }
 }
+
+struct AdapterPayloadParserTests {
+    private let now = Date(timeIntervalSince1970: 1_000_000)
+
+    private func payload() -> [String: Any] {
+        [
+            "title": "Paris",
+            "artist": "The Chainsmokers",
+            "album": "Memories... Do Not Open",
+            "duration": 221.504,
+            "elapsedTime": 104.08,
+            "timestamp": "1970-01-12T13:46:40Z",
+            "playing": true,
+            "bundleIdentifier": "com.spotify.client"
+        ]
+    }
+
+    @Test func parsesFullAdapterPayload() throws {
+        let snapshot = try AdapterPayloadParser.parse(payload(), now: now) ?? {
+            throw TestError("payload no parseado")
+        }()
+
+        #expect(snapshot.title == "Paris")
+        #expect(snapshot.artist == "The Chainsmokers")
+        #expect(snapshot.duration == 221.504)
+        #expect(snapshot.elapsed == 104.08)
+        #expect(snapshot.isPlaying)
+        #expect(snapshot.source == .spotify)
+    }
+
+    @Test func missingTitleIsRejected() {
+        var broken = payload()
+        broken["title"] = nil
+        #expect(AdapterPayloadParser.parse(broken, now: now) == nil)
+
+        broken["title"] = ""
+        #expect(AdapterPayloadParser.parse(broken, now: now) == nil)
+    }
+
+    @Test func unknownBundleMapsToMediaRemote() {
+        var custom = payload()
+        custom["bundleIdentifier"] = "com.other.player"
+        let snapshot = AdapterPayloadParser.parse(custom, now: now)
+        #expect(snapshot?.source == .mediaRemote)
+    }
+
+    @Test func streamLineParsesWhenTypeIsData() {
+        let line = #"{"type":"data","diff":false,"payload":{"title":"X","playing":false,"bundleIdentifier":"com.apple.Music","duration":100,"elapsedTime":3}}"#
+        let data = Data(line.utf8)
+
+        let snapshot = AdapterPayloadParser.parse(streamLine: data, now: now)
+        #expect(snapshot?.title == "X")
+        #expect(snapshot?.source == .appleMusic)
+        #expect(!snapshot!.isPlaying)
+    }
+
+    @Test func nonDataLinesAreIgnored() {
+        let line = Data(#"{"type":"heartbeat"}"#.utf8)
+        #expect(AdapterPayloadParser.parse(streamLine: line, now: now) == nil)
+    }
+}
+
+struct TestError: Error {
+    let message: String
+    init(_ message: String) { self.message = message }
+}

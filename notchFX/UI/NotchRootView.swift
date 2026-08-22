@@ -11,10 +11,7 @@ struct NotchRootView: View {
         ZStack(alignment: .top) {
             if let activity = stateModel.state.activity {
                 surface(for: activity)
-                    .transition(.asymmetric(
-                        insertion: .offset(y: -ScreenGeometry.compactHeight),
-                        removal: .opacity
-                    ))
+                    .transition(.opacity)
             }
         }
         .frame(
@@ -36,7 +33,7 @@ struct NotchRootView: View {
             style: surfaceStyle,
             content: AnyView(
                 content(for: activity, expanded: isExpanded)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
+                    .transition(.opacity)
             )
         )
         .notchGestures(
