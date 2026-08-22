@@ -26,10 +26,16 @@ struct NotchRootView: View {
     @ViewBuilder
     private func surface(for activity: NotchActivity) -> some View {
         let isExpanded = isExpandedState
+        let debugWidth = isExpanded ? ScreenGeometry.expandedWidth : settingsModel.settings.islandWidth
+        let debugHeight = isExpanded ? ScreenGeometry.expandedHeight : settingsModel.settings.islandHeight
+
+        if ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" {
+            let _ = Self.appendRenderLog(width: debugWidth, height: debugHeight)
+        }
 
         NotchSurface(
-            width: isExpanded ? ScreenGeometry.expandedWidth : ScreenGeometry.compactWidth,
-            height: isExpanded ? ScreenGeometry.expandedHeight : ScreenGeometry.compactHeight,
+            width: debugWidth,
+            height: debugHeight,
             style: surfaceStyle,
             content: AnyView(
                 content(for: activity, expanded: isExpanded)
@@ -97,5 +103,18 @@ struct NotchRootView: View {
         let minutes = remaining / 60
         let seconds = remaining % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+extension NotchRootView {
+    static func appendRenderLog(width: CGFloat, height: CGFloat) {
+        let line = "\(Date()) render w=\(Int(width)) h=\(Int(height))\n"
+        if let handle = FileHandle(forWritingAtPath: "/tmp/nfx_render.log") {
+            handle.seekToEndOfFile()
+            handle.write(line.data(using: .utf8)!)
+            handle.closeFile()
+        } else {
+            try? line.write(toFile: "/tmp/nfx_render.log", atomically: true, encoding: .utf8)
+        }
     }
 }
