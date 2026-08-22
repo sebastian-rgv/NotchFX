@@ -12,22 +12,26 @@ final class NotchPanelController {
 
     private var currentSurfaceStyle: NotchSettings.SurfaceStyle = .notch
     private var settingsCancellable: AnyCancellable?
+    private let nowPlaying: NowPlayingActivityController
 
     init(
         stateModel: NotchStateModel,
         engine: ActivityEngine,
-        settingsModel: SettingsModel
+        settingsModel: SettingsModel,
+        nowPlaying: NowPlayingActivityController
     ) {
         self.stateModel = stateModel
         self.engine = engine
         self.settingsModel = settingsModel
+        self.nowPlaying = nowPlaying
         panel = Self.makePanel()
 
         let view = PassthroughHostingView(rootView: Self.makeRootView(
             stateModel: stateModel,
             engine: engine,
             settingsModel: settingsModel,
-            surfaceStyle: .notch
+            surfaceStyle: .notch,
+            nowPlaying: nowPlaying
         ))
         view.opaqueRectProvider = { [weak stateModel] in
             guard let stateModel else { return .zero }
@@ -69,7 +73,8 @@ final class NotchPanelController {
                 stateModel: stateModel,
                 engine: engine,
                 settingsModel: settingsModel,
-                surfaceStyle: currentSurfaceStyle
+                surfaceStyle: currentSurfaceStyle,
+                nowPlaying: nowPlaying
             )
         }
     }
@@ -113,13 +118,15 @@ final class NotchPanelController {
         stateModel: NotchStateModel,
         engine: ActivityEngine,
         settingsModel: SettingsModel,
-        surfaceStyle: NotchSettings.SurfaceStyle
+        surfaceStyle: NotchSettings.SurfaceStyle,
+        nowPlaying: NowPlayingActivityController
     ) -> NotchRootView {
         NotchRootView(
             stateModel: stateModel,
             engine: engine,
             settingsModel: settingsModel,
-            surfaceStyle: surfaceStyle
+            surfaceStyle: surfaceStyle,
+            nowPlaying: nowPlaying
         )
     }
 

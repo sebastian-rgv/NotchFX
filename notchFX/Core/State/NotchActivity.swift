@@ -1,9 +1,20 @@
 import Foundation
 
+struct NowPlayingDisplay: Equatable {
+    let title: String
+    let artist: String
+    let duration: Double
+    let elapsedAtTimestamp: Double
+    let rate: Double
+    let timestamp: Date
+    let isPlaying: Bool
+}
+
 enum ActivityDetail: Equatable {
     case timer(endDate: Date)
     case timerFinished(label: String)
     case battery(percent: Int, isCharging: Bool)
+    case nowPlaying(NowPlayingDisplay)
     case info(symbol: String, label: String)
 }
 

@@ -17,6 +17,16 @@ La parte superior de tu MacBook tiene un espacio negro muerto.
 **notchFX lo convierte en un centro de información interactivo**: aparece cuando algo
 importa, desaparece cuando no, y responde a tus dedos como si fuera parte del hardware.
 
+### 🎵 Música en tu notch
+
+- Reproduce algo en **Spotify** o **Música** y la isla cobra vida sola
+- **Ecualizador animado** que late con la reproducción
+- Título y artista con **scroll automático** si son largos
+- **Barra de progreso interactiva**: arrastra para buscar el momento exacto
+- Controles completos: anterior / play-pause / siguiente, y los tiempos transcurrido y restante
+- Click sobre el ecualizador **abre tu reproductor**
+- Pausa unos segundos y la isla se retira educadamente
+
 ### ⏱️ Temporizadores vivos
 
 - Lanza un temporizador y mira el **countdown en vivo** sobre tu notch
@@ -93,7 +103,7 @@ Tus preferencias **se recuerdan entre sesiones**.
 
 | Próximamente | |
 |---|---|
-| 🎵 Now Playing con controles y visualizador | 📅 Siguiente evento del calendario |
+| 🖼️ Artwork del álbum en la isla | 📅 Siguiente evento del calendario |
 | 🔊 HUD de volumen y brillo | 🌙 Temas y personalización visual |
 | 🌐 Multi-idioma | ⬇️ Progreso de descargas |
 

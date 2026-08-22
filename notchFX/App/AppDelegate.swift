@@ -29,10 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var settingsModel = SettingsModel(
         store: SettingsStore(defaults: .standard)
     )
+    private lazy var nowPlayingController = NowPlayingActivityController(
+        engine: engine
+    )
     private lazy var panelController = NotchPanelController(
         stateModel: stateModel,
         engine: engine,
-        settingsModel: settingsModel
+        settingsModel: settingsModel,
+        nowPlaying: nowPlayingController
     )
     private lazy var settingsWindow = SettingsWindowController(
         settingsModel: settingsModel
@@ -46,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         installStatusItem()
         startBatteryMonitoring()
         installOutsideClickMonitor()
+        nowPlayingController.start()
         panelController.show()
     }
 

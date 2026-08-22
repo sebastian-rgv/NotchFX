@@ -5,6 +5,7 @@ struct NotchRootView: View {
     let engine: ActivityEngine
     @ObservedObject var settingsModel: SettingsModel
     let surfaceStyle: NotchSettings.SurfaceStyle
+    @ObservedObject var nowPlaying: NowPlayingActivityController
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -56,6 +57,20 @@ struct NotchRootView: View {
     @ViewBuilder
     private func content(for activity: NotchActivity, expanded: Bool) -> some View {
         switch activity.detail {
+        case .nowPlaying(let display):
+            if expanded {
+                NowPlayingExpandedContent(
+                    display: display,
+                    onTogglePlayPause: { nowPlaying.togglePlayPause() },
+                    onNext: { nowPlaying.nextTrack() },
+                    onPrevious: { nowPlaying.previousTrack() },
+                    onSeek: { seconds in nowPlaying.seek(to: seconds) },
+                    onOpenSourceApp: { nowPlaying.openSourceApp() }
+                )
+            } else {
+                NowPlayingCompactContent(display: display)
+            }
+
         case .timer(let endDate):
             if expanded {
                 TimerExpandedContent(endDate: endDate) {
