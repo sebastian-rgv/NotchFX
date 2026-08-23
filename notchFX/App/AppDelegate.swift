@@ -122,7 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.image = NSImage(
             systemSymbolName: "rectangle.inset.filled",
-            accessibilityDescription: "notchFX"
+            accessibilityDescription: "NotchFX"
         )
 
         let menu = NSMenu()
@@ -160,7 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         swipe.tag = MenuTag.swipeToggle
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Salir de notchFX", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "Salir de NotchFX", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         item.menu = menu
         statusItem = item

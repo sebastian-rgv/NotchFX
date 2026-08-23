@@ -7,9 +7,9 @@ VERSION="${VERSION#v}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-APP_NAME="notchFX"
+APP_NAME="NotchFX"
 STAGING="$ROOT/dist/staging"
-DMG_PATH="$ROOT/dist/notchFX-$VERSION.dmg"
+DMG_PATH="$ROOT/dist/NotchFX-$VERSION.dmg"
 
 echo "▶ Compilando binario release..."
 swift build -c release

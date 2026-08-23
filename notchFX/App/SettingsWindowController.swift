@@ -10,7 +10,7 @@ final class SettingsWindowController: NSWindowController {
 
         let window = NSWindow(contentViewController: hosting)
         window.styleMask = [.titled, .closable]
-        window.title = "notchFX — Ajustes"
+        window.title = "NotchFX — Ajustes"
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .darkAqua)
         window.setContentSize(NSSize(width: 620, height: 400))

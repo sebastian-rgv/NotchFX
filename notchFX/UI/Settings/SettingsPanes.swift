@@ -163,7 +163,7 @@ struct AboutPane: View {
                     .foregroundStyle(.white)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("notchFX")
+                    Text("NotchFX")
                         .font(.title2.bold())
                     Text("Versión \(version)")
                         .foregroundStyle(.secondary)
