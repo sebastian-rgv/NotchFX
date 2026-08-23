@@ -10,6 +10,9 @@ struct NotchSurface: View {
     @Environment(\.notchDragging) private var isDragging
 
     private var cornerRadius: CGFloat {
+        if style == .notch {
+            return 0
+        }
         if isDragging {
             return 26
         }

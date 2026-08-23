@@ -68,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if let self, self.panelController.isPointOverIsland(location) {
                     tappedIsland = true
                     DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .notchTapReceived, object: nil)
+                        self.panelController.handleGlobalClick(at: location)
                     }
                 }
 
@@ -106,6 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        nowPlayingController.stop()
         batteryService?.stop()
 
         if let monitor = outsideClickMonitor {

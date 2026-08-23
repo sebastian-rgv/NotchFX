@@ -56,3 +56,60 @@ enum ScreenGeometry {
         )
     }
 }
+
+
+extension ScreenGeometry {
+    enum ExpandedZone {
+        case previous
+        case playPause
+        case next
+        case scrubber(fraction: Double)
+        case background
+    }
+
+    static func windowOrigin(
+        screenFrame: CGRect,
+        topSafeAreaInset: CGFloat,
+        style: NotchSettings.SurfaceStyle,
+        width: CGFloat = ScreenGeometry.windowWidth,
+        height: CGFloat = ScreenGeometry.windowHeight
+    ) -> CGPoint {
+        let yOffset: CGFloat = style == .capsule
+            ? topSafeAreaInset + DisplayTargetResolver.floatingGap
+            : -1
+        return CGPoint(
+            x: screenFrame.midX - width / 2,
+            y: screenFrame.maxY - height - yOffset
+        )
+    }
+
+    static func expandedZone(
+        at globalPoint: CGPoint,
+        windowOrigin: CGPoint,
+        islandWidth: CGFloat,
+        duration: Double,
+        elapsed: Double
+    ) -> ExpandedZone {
+        let localX = globalPoint.x - (windowOrigin.x + (windowWidth - islandWidth) / 2)
+        let localYFromTop = (windowOrigin.y + windowHeight) - globalPoint.y
+
+        guard localYFromTop > notchClearance else { return .background }
+
+        let controlsTop = notchClearance + 62
+        let controlsBottom = controlsTop + 40
+
+        if localYFromTop >= controlsTop, localYFromTop <= controlsBottom {
+            let third = islandWidth / 3
+            if localX < third { return .previous }
+            if localX > islandWidth - third { return .next }
+            return .playPause
+        }
+
+        if localYFromTop >= notchClearance + 30, localYFromTop <= notchClearance + 52 {
+            let fraction = min(max(0, localX / islandWidth), 1)
+            return .scrubber(fraction: fraction * duration + elapsed - elapsed)
+        }
+
+        return .background
+    }
+}

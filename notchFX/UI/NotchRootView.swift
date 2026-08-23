@@ -19,6 +19,8 @@ struct NotchRootView: View {
             height: ScreenGeometry.windowHeight,
             alignment: .top
         )
+        .background(Color.clear)
+        .ignoresSafeArea()
         .animation(.notchMorph, value: stateModel.state)
         .animation(.notchShowHide, value: stateModel.state.isPresented)
         .onReceive(NotificationCenter.default.publisher(for: .notchTapReceived)) { _ in

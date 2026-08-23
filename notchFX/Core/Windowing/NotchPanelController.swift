@@ -11,6 +11,9 @@ final class NotchPanelController {
     private let hostingView: PassthroughHostingView
 
     private var currentSurfaceStyle: NotchSettings.SurfaceStyle = .notch
+    private var lastScreenFrame: CGRect = .zero
+    private var lastTopInset: CGFloat = 0
+    private var lastHandledTapAt = Date.distantPast
     private var settingsCancellable: AnyCancellable?
     private let nowPlaying: NowPlayingActivityController
 
@@ -24,7 +27,23 @@ final class NotchPanelController {
         self.engine = engine
         self.settingsModel = settingsModel
         self.nowPlaying = nowPlaying
-        panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel = NotchPanel(contentRect: .zero, styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.standardWindowButton(.closeButton)?.isHidden = true
+        panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        panel.standardWindowButton(.zoomButton)?.isHidden = true
+        panel.toolbarStyle = .unifiedCompact
+        panel.isFloatingPanel = true
+        panel.animationBehavior = .none
+        panel.isMovable = false
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.acceptsMouseMovedEvents = true
+        panel.level = NSWindow.Level.mainMenu + 3
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
 
         let view = PassthroughHostingView(rootView: Self.makeRootView(
             stateModel: stateModel,
@@ -64,7 +83,7 @@ final class NotchPanelController {
         }
 
         if ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" {
-            let line = "\(Date()) panel wn=\(panel.windowNumber) ignores=\(panel.ignoresMouseEvents) frame=\(panel.frame) canBecomeKey=\(panel.canBecomeKey)\n"
+            let line = "\(Date()) panel wn=\(panel.windowNumber) level=\(panel.level.rawValue) ignores=\(panel.ignoresMouseEvents) frame=\(panel.frame)\n"
             if let handle = FileHandle(forWritingAtPath: "/tmp/nfx_events.log") {
                 handle.seekToEndOfFile()
                 handle.write(line.data(using: .utf8)!)
@@ -81,6 +100,57 @@ final class NotchPanelController {
 
     func isPointOverIsland(_ screenLocation: NSPoint) -> Bool {
         stateModel.state.isPresented && panel.frame.contains(screenLocation)
+    }
+
+    func handleGlobalClick(at screenLocation: NSPoint) {
+        guard stateModel.state.isPresented else { return }
+
+        let now = Date()
+        guard now.timeIntervalSince(lastHandledTapAt) > 0.25 else { return }
+        lastHandledTapAt = now
+
+        guard case .expanded = stateModel.state else {
+            nfxTrace("global click compacto -> expandir")
+            stateModel.expand()
+            return
+        }
+
+        let islandWidth = settingsModel.settings.islandWidth
+        let duration = currentMediaDuration()
+
+        let origin = ScreenGeometry.windowOrigin(
+            screenFrame: lastScreenFrame,
+            topSafeAreaInset: lastTopInset,
+            style: currentSurfaceStyle,
+            width: ScreenGeometry.windowWidth,
+            height: ScreenGeometry.windowHeight
+        )
+
+        switch ScreenGeometry.expandedZone(
+            at: screenLocation,
+            windowOrigin: origin,
+            islandWidth: islandWidth,
+            duration: duration,
+            elapsed: 0
+        ) {
+        case .previous:
+            nowPlaying.previousTrack()
+        case .playPause:
+            nowPlaying.togglePlayPause()
+        case .next:
+            nowPlaying.nextTrack()
+        case .scrubber(let fraction):
+            nowPlaying.seek(to: fraction * duration)
+        case .background:
+            stateModel.collapse()
+        }
+    }
+
+    private func currentMediaDuration() -> Double {
+        if case .nowPlaying(let detail) = stateModel.state.activity?.detail {
+            return detail.duration
+        }
+        return 0
     }
 
     func handleOutsideClick(at screenLocation: NSPoint) {
@@ -128,6 +198,9 @@ final class NotchPanelController {
             topSafeAreaInset: inset
         )
 
+        lastScreenFrame = screen.frame
+        lastTopInset = inset
+
         let anchor = ScreenGeometry.surfaceAnchorFrame(
             screenFrame: screen.frame,
             topSafeAreaInset: inset,
@@ -157,32 +230,6 @@ final class NotchPanelController {
         )
     }
 
-    private static func makePanel() -> NSPanel {
-        let panel = NotchPanel(
-            contentRect: CGRect(
-                x: 0,
-                y: 0,
-                width: ScreenGeometry.windowWidth,
-                height: ScreenGeometry.windowHeight
-            ),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        panel.isOpaque = false
-        if let notch = panel as? NotchPanel {
-            notch.acceptsMouseMovedEvents = true
-        }
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.isMovableByWindowBackground = false
-        panel.isReleasedWhenClosed = false
-        panel.level = .statusBar
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        panel.ignoresMouseEvents = false
-        panel.hidesOnDeactivate = false
-        return panel
-    }
 }
 
 private final class PassthroughHostingView: NSHostingView<NotchRootView> {
@@ -234,8 +281,14 @@ private final class PassthroughHostingView: NSHostingView<NotchRootView> {
 
 final class NotchPanel: NSPanel {
     override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+    override var isKeyWindow: Bool { true }
 
     private var downLocation: NSPoint?
+
+    override func constrainFrameRect(_ frameRect: NSRect, to screenRect: NSScreen?) -> NSRect {
+        frameRect
+    }
 
     override func sendEvent(_ event: NSEvent) {
         switch event.type {
