@@ -83,7 +83,7 @@ Tus preferencias **se recuerdan entre sesiones**.
 
 ## Instalación
 
-1. Descarga el DMG más reciente desde [Releases](https://github.com/sebastian-rgv/notchFX/releases)
+1. Descarga el DMG más reciente desde [Releases](https://github.com/sebastian-rgv/NotchFX/releases)
 2. Abre el DMG y arrastra **NotchFX** a Aplicaciones
 3. Al primer arranque, macOS mostrará *"Apple could not verify..."*:
 
@@ -110,7 +110,7 @@ Tus preferencias **se recuerdan entre sesiones**.
 ## Compilar desde el código fuente
 
 ```bash
-git clone https://github.com/sebastian-rgv/notchFX.git
+git clone https://github.com/sebastian-rgv/NotchFX.git
 cd notchFX
 swift build && swift test     # compilar y probar
 open notchFX.xcodeproj        # o abrirlo en Xcode (Cmd+R)
