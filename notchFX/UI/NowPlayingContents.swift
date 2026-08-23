@@ -18,15 +18,15 @@ struct NowPlayingCompactContent: View {
         )
     }
 
-    private var remaining: Double {
+    private func remaining(at date: Date) -> Double {
         max(0, display.duration - NowPlayingLogic.currentElapsed(
             snapshot: snapshotValue,
-            at: Date()
+            at: date
         ))
     }
 
-    private var progress: Double {
-        NowPlayingLogic.progress(snapshot: snapshotValue, at: Date())
+    private func progress(at date: Date) -> Double {
+        NowPlayingLogic.progress(snapshot: snapshotValue, at: date)
     }
 
     var body: some View {
@@ -48,17 +48,16 @@ struct NowPlayingCompactContent: View {
                         }
                     },
                     trailing: {
-                        Text("-" + NowPlayingLogic.formatClock(remaining))
-                            .font(.system(size: 11, weight: .medium))
-                            .monospacedDigit()
-                            .foregroundStyle(.white.opacity(0.7))
-                            .lineLimit(1)
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            Text("-" + NowPlayingLogic.formatClock(remaining(at: context.date)))
+                                .font(.system(size: 11, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(.white.opacity(0.7))
+                                .lineLimit(1)
+                        }
                     }
                 )
 
-                Capsule()
-                    .fill(Color.white.opacity(0.6))
-                    .frame(width: max(10, geometry.size.width * progress), height: 2.5)
             }
         }
     }
@@ -162,7 +161,7 @@ struct NowPlayingExpandedContent: View {
     }
 
     private var scrubberSection: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 10) {
             GeometryReader { geometry in
                 let trackWidth = geometry.size.width
 
