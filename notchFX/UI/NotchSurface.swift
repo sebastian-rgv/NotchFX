@@ -11,7 +11,7 @@ struct NotchSurface: View {
 
     private var cornerRadius: CGFloat {
         if style == .notch {
-            return 0
+            return 10
         }
         if isDragging {
             return 26

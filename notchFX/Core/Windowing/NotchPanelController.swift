@@ -27,14 +27,8 @@ final class NotchPanelController {
         self.engine = engine
         self.settingsModel = settingsModel
         self.nowPlaying = nowPlaying
-        panel = NotchPanel(contentRect: .zero, styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+        panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
 
-        panel.titleVisibility = .hidden
-        panel.titlebarAppearsTransparent = true
-        panel.standardWindowButton(.closeButton)?.isHidden = true
-        panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        panel.standardWindowButton(.zoomButton)?.isHidden = true
-        panel.toolbarStyle = .unifiedCompact
         panel.isFloatingPanel = true
         panel.animationBehavior = .none
         panel.isMovable = false

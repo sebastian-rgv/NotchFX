@@ -60,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var clickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        print("ZZTESTMARCADOR99 didload")
         if ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" {
             clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
                 let location = NSEvent.mouseLocation
