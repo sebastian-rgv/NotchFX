@@ -46,7 +46,12 @@ struct NotchRootView: View {
             style: surfaceStyle,
             content: AnyView(
                 content(for: activity, expanded: isExpanded)
-                    .transition(.opacity)
+                    .transition(
+                        .asymmetric(
+                            insertion: .opacity,
+                            removal: .opacity.animation(.easeOut(duration: 0.08))
+                        )
+                    )
             )
         )
         .notchGestures(
