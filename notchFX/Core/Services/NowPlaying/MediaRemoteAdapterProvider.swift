@@ -65,6 +65,7 @@ enum AdapterPayloadParser {
 final class MediaRemoteAdapterProvider {
     private let handler: (NowPlayingSnapshot?) -> Void
     private var streamProcess: Process?
+    private var artworkProcess: Process?
 
     private let perlPath = "/usr/bin/perl"
 
@@ -215,6 +216,8 @@ final class MediaRemoteAdapterProvider {
     }
 
     func fetchArtwork(completion: @escaping (NSImage?) -> Void) {
+        cancelArtworkFetch()
+
         guard
             let scriptPath,
             let frameworkPath,
@@ -232,7 +235,13 @@ final class MediaRemoteAdapterProvider {
         let pipe = Pipe()
         process.standardOutput = pipe
 
-        process.terminationHandler = { _ in
+        artworkProcess = process
+
+        process.terminationHandler = { [weak self] _ in
+            guard let self else { return }
+            if self.artworkProcess === process {
+                self.artworkProcess = nil
+            }
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
 
             guard
@@ -251,8 +260,18 @@ final class MediaRemoteAdapterProvider {
         do {
             try process.run()
         } catch {
+            artworkProcess = nil
             DispatchQueue.main.async { completion(nil) }
         }
+    }
+
+    func cancelArtworkFetch() {
+        guard let process = artworkProcess, process.isRunning else {
+            artworkProcess = nil
+            return
+        }
+        process.terminate()
+        artworkProcess = nil
     }
 
     private func runAdapterCommand(_ arguments: [String]) {

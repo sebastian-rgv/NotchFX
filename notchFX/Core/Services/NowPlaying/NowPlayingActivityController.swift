@@ -17,6 +17,7 @@ final class NowPlayingActivityController: ObservableObject {
 
     private var pausedSince: Date?
     private var lastArtworkTrackKey: String?
+    private var artworkGeneration: Int = 0
     private var activeProvider: ProviderKind = .scripted
 
     private lazy var adapterProvider = MediaRemoteAdapterProvider { [weak self] snapshot in
@@ -164,11 +165,18 @@ final class NowPlayingActivityController: ObservableObject {
     private func refreshArtworkIfNeeded(for snapshot: NowPlayingSnapshot) {
         let trackKey = "\(snapshot.title)|\(snapshot.artist)"
 
-        guard activeProvider == .adapter, trackKey != lastArtworkTrackKey else { return }
+        guard activeProvider == .adapter else { return }
+
+        guard trackKey != lastArtworkTrackKey else { return }
         lastArtworkTrackKey = trackKey
+        artwork = nil
+
+        artworkGeneration += 1
+        let currentGeneration = artworkGeneration
 
         adapterProvider.fetchArtwork { [weak self] image in
-            self?.artwork = image
+            guard let self, self.artworkGeneration == currentGeneration else { return }
+            self.artwork = image
         }
     }
 
