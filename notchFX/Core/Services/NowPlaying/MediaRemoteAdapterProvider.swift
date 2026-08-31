@@ -198,6 +198,9 @@ final class MediaRemoteAdapterProvider {
             }
 
             Self.trace("stream lector terminado (líneas: \(lineCount))")
+            DispatchQueue.main.async {
+                onData(nil)
+            }
         }
     }
 
@@ -205,6 +208,9 @@ final class MediaRemoteAdapterProvider {
         guard let process = streamProcess, process.isRunning else { return }
         process.terminate()
         streamProcess = nil
+        DispatchQueue.main.async { [handler] in
+            handler(nil)
+        }
     }
 
     func send(commandID: String) {
