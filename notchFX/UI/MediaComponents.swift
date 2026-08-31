@@ -6,7 +6,7 @@ struct EqualizerBars: View {
     var spacing: CGFloat = 2.5
     var maxHeight: CGFloat = 16
 
-    @State private var phase = false
+    @State private var animating = false
 
     private let patterns: [(base: CGFloat, amp: CGFloat, speed: Double, delay: Double)] = [
         (0.35, 0.65, 0.55, 0),
@@ -22,30 +22,35 @@ struct EqualizerBars: View {
                     .fill(Color.white.opacity(index % 2 == 0 ? 0.85 : 0.5))
                     .frame(width: barWidth, height: height(for: index))
                     .animation(
-                        isPlaying
+                        isPlaying && animating
                             ? .easeInOut(duration: patterns[index].speed)
                                 .repeatForever(autoreverses: true)
                                 .delay(patterns[index].delay)
                             : .easeOut(duration: 0.25),
-                        value: phase
+                        value: animating
                     )
             }
         }
         .frame(height: maxHeight, alignment: .bottom)
-        .onAppear { phase = isPlaying }
-        .onChange(of: isPlaying) { newValue in
-            phase = newValue && !phase ? false : newValue
-            if newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                    phase = true
-                }
-            }
+        .onChange(of: isPlaying) { _, playing in
+            restartAnimation(playing: playing)
+        }
+        .onAppear {
+            animating = isPlaying
+        }
+    }
+
+    private func restartAnimation(playing: Bool) {
+        animating = false
+        guard playing else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            animating = true
         }
     }
 
     private func height(for index: Int) -> CGFloat {
         let pattern = patterns[index % patterns.count]
-        let fraction = phase && isPlaying
+        let fraction = animating && isPlaying
             ? pattern.base + pattern.amp * (index % 2 == 0 ? 1 : 0.7)
             : pattern.base * 0.6
         return max(2, maxHeight * fraction)
