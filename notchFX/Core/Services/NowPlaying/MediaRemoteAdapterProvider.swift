@@ -223,9 +223,12 @@ final class MediaRemoteAdapterProvider {
             let frameworkPath,
             FileManager.default.isExecutableFile(atPath: perlPath)
         else {
+            Self.trace("fetchArtwork: paths not available")
             DispatchQueue.main.async { completion(nil) }
             return
         }
+
+        Self.trace("fetchArtwork: launching get command")
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: perlPath)
@@ -237,29 +240,53 @@ final class MediaRemoteAdapterProvider {
 
         artworkProcess = process
 
-        process.terminationHandler = { [weak self] _ in
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+
+            process.waitUntilExit()
+
             guard let self else { return }
             if self.artworkProcess === process {
                 self.artworkProcess = nil
             }
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
 
-            guard
-                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                let base64 = object["artworkData"] as? String,
-                let imageData = Data(base64Encoded: base64),
-                let image = NSImage(data: imageData)
-            else {
+            Self.trace("fetchArtwork: process exited status=\(process.terminationStatus) data=\(data.count) bytes")
+
+            guard process.terminationStatus == 0 else {
                 DispatchQueue.main.async { completion(nil) }
                 return
             }
 
+            guard
+                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else {
+                Self.trace("fetchArtwork: failed to parse JSON")
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+
+            guard let base64 = object["artworkData"] as? String else {
+                Self.trace("fetchArtwork: no artworkData in response, keys=\(Array(object.keys))")
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+
+            guard let imageData = Data(base64Encoded: base64),
+                  let image = NSImage(data: imageData)
+            else {
+                Self.trace("fetchArtwork: failed to decode image from base64")
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+
+            Self.trace("fetchArtwork: success \(Int(image.size.width))x\(Int(image.size.height))")
             DispatchQueue.main.async { completion(image) }
         }
 
         do {
             try process.run()
         } catch {
+            Self.trace("fetchArtwork: failed to launch process: \(error)")
             artworkProcess = nil
             DispatchQueue.main.async { completion(nil) }
         }
