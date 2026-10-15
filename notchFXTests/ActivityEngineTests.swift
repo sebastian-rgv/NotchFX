@@ -80,6 +80,35 @@ struct ActivityEngineTests {
         #expect(stateModel.state == .compact(timer))
     }
 
+    @Test func focusOverridesExpandedDifferentActivity() {
+        let stateModel = NotchStateModel()
+        let engine = ActivityEngine(stateModel: stateModel)
+        engine.now = { base }
+
+        let music = NotchActivity(
+            id: ActivityID(rawValue: "music"),
+            kind: .nowPlaying,
+            detail: .nowPlaying(NowPlayingDisplay(
+                title: "t", artist: "a", duration: 100,
+                elapsedAtTimestamp: 0, rate: 1, timestamp: base,
+                isPlaying: true, source: .mediaRemote
+            ))
+        )
+        engine.present(music, priority: .ambient)
+        stateModel.expand()
+        #expect(stateModel.state == .expanded(music))
+
+        let terminal = NotchActivity(
+            id: TerminalController.activityID,
+            kind: .terminal,
+            detail: .terminal(TerminalDisplay(
+                scriptName: "fx.sh", lines: [], isRunning: true, exitCode: nil
+            ))
+        )
+        engine.focus(terminal, priority: .alert)
+        #expect(stateModel.state == .compact(terminal))
+    }
+
     @Test func criticalPreemptsAlert() {
         let stateModel = NotchStateModel()
         let engine = ActivityEngine(stateModel: stateModel)

@@ -7,6 +7,7 @@ enum ActivityKind: String, Codable, CaseIterable {
     case hud
     case download
     case camera
+    case terminal
 
     var displayName: String {
         switch self {
@@ -22,6 +23,8 @@ enum ActivityKind: String, Codable, CaseIterable {
             return "Download"
         case .camera:
             return "Camera"
+        case .terminal:
+            return "Terminal"
         }
     }
 
@@ -39,6 +42,8 @@ enum ActivityKind: String, Codable, CaseIterable {
             return "arrow.down.circle"
         case .camera:
             return "video.fill"
+        case .terminal:
+            return "terminal"
         }
     }
 }

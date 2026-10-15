@@ -23,6 +23,9 @@ cp .build/release/notchFXApp "$STAGING/$APP_NAME.app/Contents/MacOS/notchFX"
 mkdir -p "$STAGING/$APP_NAME.app/Contents/Resources/adapter"
 cp -R Packaging/adapter/. "$STAGING/$APP_NAME.app/Contents/Resources/adapter/"
 
+cp Scripts/fx.sh "$STAGING/$APP_NAME.app/Contents/Resources/fx.sh"
+chmod +x "$STAGING/$APP_NAME.app/Contents/Resources/fx.sh"
+
 if [[ -f "Packaging/Resources/notchFX.icns" ]]; then
     cp Packaging/Resources/notchFX.icns "$STAGING/$APP_NAME.app/Contents/Resources/"
 else

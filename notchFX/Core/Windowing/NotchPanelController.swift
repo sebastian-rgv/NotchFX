@@ -16,17 +16,20 @@ final class NotchPanelController {
     private var lastHandledTapAt = Date.distantPast
     private var settingsCancellable: AnyCancellable?
     private let nowPlaying: NowPlayingActivityController
+    private let terminal: TerminalController
 
     init(
         stateModel: NotchStateModel,
         engine: ActivityEngine,
         settingsModel: SettingsModel,
-        nowPlaying: NowPlayingActivityController
+        nowPlaying: NowPlayingActivityController,
+        terminal: TerminalController
     ) {
         self.stateModel = stateModel
         self.engine = engine
         self.settingsModel = settingsModel
         self.nowPlaying = nowPlaying
+        self.terminal = terminal
         panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
 
         panel.isFloatingPanel = true
@@ -44,7 +47,8 @@ final class NotchPanelController {
             engine: engine,
             settingsModel: settingsModel,
             surfaceStyle: .notch,
-            nowPlaying: nowPlaying
+            nowPlaying: nowPlaying,
+            terminal: terminal
         ))
         view.opaqueRectProvider = { [weak stateModel, weak settingsModel] in
             guard let stateModel else { return .zero }
@@ -161,7 +165,8 @@ final class NotchPanelController {
                 engine: engine,
                 settingsModel: settingsModel,
                 surfaceStyle: currentSurfaceStyle,
-                nowPlaying: nowPlaying
+                nowPlaying: nowPlaying,
+                terminal: terminal
             )
         }
     }
@@ -213,14 +218,16 @@ final class NotchPanelController {
         engine: ActivityEngine,
         settingsModel: SettingsModel,
         surfaceStyle: NotchSettings.SurfaceStyle,
-        nowPlaying: NowPlayingActivityController
+        nowPlaying: NowPlayingActivityController,
+        terminal: TerminalController
     ) -> NotchRootView {
         NotchRootView(
             stateModel: stateModel,
             engine: engine,
             settingsModel: settingsModel,
             surfaceStyle: surfaceStyle,
-            nowPlaying: nowPlaying
+            nowPlaying: nowPlaying,
+            terminal: terminal
         )
     }
 

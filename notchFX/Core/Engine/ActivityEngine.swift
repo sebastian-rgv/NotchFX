@@ -27,6 +27,16 @@ final class ActivityEngine: ObservableObject {
         refresh()
     }
 
+    /// Surfaces an activity immediately, overriding an expanded view that
+    /// belongs to a different activity. Used for user-initiated actions such
+    /// as the terminal, where the notch must switch even while music is
+    /// expanded.
+    func focus(_ activity: NotchActivity, priority: ActivityPriority) {
+        scheduler.upsert(activity, priority: priority, expiresAt: nil)
+        stateModel.present(activity)
+        scheduleNextExpiry()
+    }
+
     func dismissTop() {
         guard let top = scheduler.top else { return }
         scheduler.remove(top.activity.id)

@@ -11,11 +11,25 @@ struct NowPlayingDisplay: Equatable {
     let source: NowPlayingSource
 }
 
+struct TerminalDisplay: Equatable {
+    let scriptName: String
+    let lines: [String]
+    let isRunning: Bool
+    let exitCode: Int32?
+
+    var statusText: String {
+        if isRunning { return "corriendo…" }
+        guard let exitCode else { return scriptName }
+        return exitCode == 0 ? "listo" : "error (\(exitCode))"
+    }
+}
+
 enum ActivityDetail: Equatable {
     case timer(endDate: Date)
     case timerFinished(label: String)
     case battery(percent: Int, isCharging: Bool)
     case nowPlaying(NowPlayingDisplay)
+    case terminal(TerminalDisplay)
     case info(symbol: String, label: String)
 }
 

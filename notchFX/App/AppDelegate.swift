@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 
 func nfxTrace(_ message: String) {
     guard ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" else { return }
@@ -38,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var nowPlayingController = NowPlayingActivityController(
         engine: engine
     )
+    private lazy var terminalController = TerminalController(engine: engine)
     private lazy var cameraMonitor = CameraMonitor { [weak self] inUse in
         MainActor.assumeIsolated {
             self?.handleCamera(inUse: inUse)
@@ -47,7 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         stateModel: stateModel,
         engine: engine,
         settingsModel: settingsModel,
-        nowPlaying: nowPlayingController
+        nowPlaying: nowPlayingController,
+        terminal: terminalController
     )
     private lazy var settingsWindow = SettingsWindowController(
         settingsModel: settingsModel
@@ -56,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var batteryService: BatteryMonitorService?
     private var statusItem: NSStatusItem?
     private var outsideClickMonitor: Any?
+    private var terminalHotKey: GlobalHotKey?
 
     private var clickMonitor: Any?
 
@@ -96,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         installStatusItem()
+        installTerminalHotKey()
         startBatteryMonitoring()
         installOutsideClickMonitor()
         nowPlayingController.start()
@@ -137,6 +142,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(settings)
         menu.addItem(.separator())
 
+        let terminal = menu.addItem(
+            withTitle: "Terminal (fx.sh)",
+            action: #selector(runFxScript),
+            keyEquivalent: "t"
+        )
+        terminal.target = self
+        terminal.keyEquivalentModifierMask = [.command, .option]
+
         menu.addItem(withTitle: "Temporizador demo (10 s)", action: #selector(startDemoTimer), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Alerta de prueba", action: #selector(emitTestAlert), keyEquivalent: "").target = self
         menu.addItem(.separator())
@@ -168,6 +181,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
         refreshMenuState(menu)
+    }
+
+    // MARK: - Terminal
+
+    private func installTerminalHotKey() {
+        terminalHotKey = GlobalHotKey(
+            keyCode: UInt32(kVK_ANSI_T),
+            modifiers: UInt32(cmdKey | optionKey)
+        ) { [weak self] in
+            MainActor.assumeIsolated {
+                self?.terminalController.run()
+            }
+        }
+
+        if terminalHotKey == nil {
+            nfxTrace("Terminal hotkey no se pudo registrar")
+        }
+    }
+
+    @objc private func runFxScript() {
+        terminalController.run()
     }
 
     private func refreshMenuState(_ menu: NSMenu) {
