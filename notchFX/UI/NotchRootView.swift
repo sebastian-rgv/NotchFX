@@ -6,6 +6,7 @@ struct NotchRootView: View {
     @ObservedObject var settingsModel: SettingsModel
     let surfaceStyle: NotchSettings.SurfaceStyle
     @ObservedObject var nowPlaying: NowPlayingActivityController
+    @ObservedObject var terminal: TerminalController
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -105,6 +106,17 @@ struct NotchRootView: View {
                 BatteryExpandedContent(percent: percent, isCharging: isCharging)
             } else {
                 BatteryCompactContent(percent: percent, isCharging: isCharging)
+            }
+
+        case .terminal(let display):
+            if expanded {
+                TerminalExpandedContent(
+                    display: display,
+                    onRerun: { terminal.run() },
+                    onClose: { terminal.dismiss() }
+                )
+            } else {
+                TerminalCompactContent(display: display)
             }
 
         case .timerFinished(let label):
