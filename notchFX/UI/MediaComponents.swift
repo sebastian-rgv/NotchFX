@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct EqualizerBars: View {
@@ -6,53 +7,37 @@ struct EqualizerBars: View {
     var spacing: CGFloat = 2.5
     var maxHeight: CGFloat = 16
 
-    @State private var animating = false
-
-    private let patterns: [(base: CGFloat, amp: CGFloat, speed: Double, delay: Double)] = [
-        (0.35, 0.65, 0.55, 0),
-        (0.55, 0.45, 0.42, 0.12),
-        (0.30, 0.70, 0.62, 0.05),
-        (0.50, 0.50, 0.48, 0.18)
+    // Per-bar motion: height fractions at the wave's trough/crest,
+    // angular speed (rad/s) and phase offset (rad).
+    private let bars: [(low: CGFloat, high: CGFloat, speed: Double, phase: Double)] = [
+        (0.21, 1.00, 5.7, 0.0),
+        (0.33, 0.87, 7.5, 1.1),
+        (0.18, 1.00, 5.1, 2.3),
+        (0.30, 0.85, 6.5, 0.6)
     ]
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: spacing) {
-            ForEach(0..<patterns.count, id: \.self) { index in
-                Capsule()
-                    .fill(Color.white.opacity(index % 2 == 0 ? 0.85 : 0.5))
-                    .frame(width: barWidth, height: height(for: index))
-                    .animation(
-                        isPlaying && animating
-                            ? .easeInOut(duration: patterns[index].speed)
-                                .repeatForever(autoreverses: true)
-                                .delay(patterns[index].delay)
-                            : .easeOut(duration: 0.25),
-                        value: animating
-                    )
+        // Heights are a pure function of time, driven by the timeline's own
+        // display link. This keeps the bars moving regardless of how often
+        // the parent view re-renders (snapshot updates, expansion, AnyView
+        // erasure) - a repeatForever implicit animation stalls in that case.
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isPlaying)) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            HStack(alignment: .bottom, spacing: spacing) {
+                ForEach(bars.indices, id: \.self) { index in
+                    Capsule()
+                        .fill(Color.white.opacity(index % 2 == 0 ? 0.85 : 0.5))
+                        .frame(width: barWidth, height: height(for: index, at: time))
+                }
             }
-        }
-        .frame(height: maxHeight, alignment: .bottom)
-        .onChange(of: isPlaying) { _, playing in
-            restartAnimation(playing: playing)
-        }
-        .onAppear {
-            animating = isPlaying
+            .frame(height: maxHeight, alignment: .bottom)
         }
     }
 
-    private func restartAnimation(playing: Bool) {
-        animating = false
-        guard playing else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            animating = true
-        }
-    }
-
-    private func height(for index: Int) -> CGFloat {
-        let pattern = patterns[index % patterns.count]
-        let fraction = animating && isPlaying
-            ? pattern.base + pattern.amp * (index % 2 == 0 ? 1 : 0.7)
-            : pattern.base * 0.6
+    private func height(for index: Int, at time: Double) -> CGFloat {
+        let bar = bars[index]
+        let wave = isPlaying ? (sin(time * bar.speed + bar.phase) + 1) / 2 : 0
+        let fraction = bar.low + (bar.high - bar.low) * wave
         return max(2, maxHeight * fraction)
     }
 }
