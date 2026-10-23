@@ -17,19 +17,25 @@ final class NotchPanelController {
     private var settingsCancellable: AnyCancellable?
     private let nowPlaying: NowPlayingActivityController
     private let terminal: TerminalController
+    private let characters: CharacterSessionController
+    private let onManageCharacters: () -> Void
 
     init(
         stateModel: NotchStateModel,
         engine: ActivityEngine,
         settingsModel: SettingsModel,
         nowPlaying: NowPlayingActivityController,
-        terminal: TerminalController
+        terminal: TerminalController,
+        characters: CharacterSessionController,
+        onManageCharacters: @escaping () -> Void
     ) {
         self.stateModel = stateModel
         self.engine = engine
         self.settingsModel = settingsModel
         self.nowPlaying = nowPlaying
         self.terminal = terminal
+        self.characters = characters
+        self.onManageCharacters = onManageCharacters
         panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
 
         panel.isFloatingPanel = true
@@ -48,7 +54,9 @@ final class NotchPanelController {
             settingsModel: settingsModel,
             surfaceStyle: .notch,
             nowPlaying: nowPlaying,
-            terminal: terminal
+            terminal: terminal,
+            characters: characters,
+            onManageCharacters: onManageCharacters
         ))
         view.opaqueRectProvider = { [weak stateModel, weak settingsModel] in
             guard let stateModel else { return .zero }
@@ -129,7 +137,8 @@ final class NotchPanelController {
             windowOrigin: origin,
             islandWidth: islandWidth,
             duration: duration,
-            elapsed: 0
+            elapsed: 0,
+            kind: stateModel.state.activity?.kind
         ) {
         case .previous:
             nowPlaying.previousTrack()
@@ -166,7 +175,9 @@ final class NotchPanelController {
                 settingsModel: settingsModel,
                 surfaceStyle: currentSurfaceStyle,
                 nowPlaying: nowPlaying,
-                terminal: terminal
+                terminal: terminal,
+                characters: characters,
+                onManageCharacters: onManageCharacters
             )
         }
     }
@@ -219,7 +230,9 @@ final class NotchPanelController {
         settingsModel: SettingsModel,
         surfaceStyle: NotchSettings.SurfaceStyle,
         nowPlaying: NowPlayingActivityController,
-        terminal: TerminalController
+        terminal: TerminalController,
+        characters: CharacterSessionController,
+        onManageCharacters: @escaping () -> Void
     ) -> NotchRootView {
         NotchRootView(
             stateModel: stateModel,
@@ -227,7 +240,9 @@ final class NotchPanelController {
             settingsModel: settingsModel,
             surfaceStyle: surfaceStyle,
             nowPlaying: nowPlaying,
-            terminal: terminal
+            terminal: terminal,
+            characters: characters,
+            onManageCharacters: onManageCharacters
         )
     }
 

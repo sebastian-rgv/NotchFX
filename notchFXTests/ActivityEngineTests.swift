@@ -127,4 +127,61 @@ struct ActivityEngineTests {
         engine.refresh()
         #expect(stateModel.state == .compact(alert))
     }
+
+    @Test func updateReplacesPayloadWithoutReordering() {
+        let stateModel = NotchStateModel()
+        let engine = ActivityEngine(stateModel: stateModel)
+        engine.now = { base }
+
+        let ambient = NotchActivity(id: ActivityID(rawValue: "timer"), kind: .timer)
+        engine.present(ambient, priority: .ambient)
+
+        let alert = NotchActivity(id: ActivityID(rawValue: "alert"), kind: .battery)
+        engine.present(alert, priority: .alert)
+        #expect(stateModel.state == .compact(alert))
+
+        let updated = NotchActivity(
+            id: ambient.id,
+            kind: .timer,
+            detail: .timerFinished(label: "listo")
+        )
+        #expect(engine.update(updated))
+        #expect(stateModel.state == .compact(alert))
+    }
+
+    @Test func updateReportsMissingActivity() {
+        let engine = ActivityEngine(stateModel: NotchStateModel())
+        let ghost = NotchActivity(id: ActivityID(rawValue: "missing"), kind: .timer)
+        #expect(engine.update(ghost) == false)
+    }
+
+    @Test func updateKeepsExpandedStateForSameActivity() {
+        let stateModel = NotchStateModel()
+        let engine = ActivityEngine(stateModel: stateModel)
+
+        let activity = NotchActivity(
+            id: ActivityID(rawValue: "characters"),
+            kind: .characters,
+            detail: .characters(.empty)
+        )
+        engine.focus(activity, priority: .alert, expand: true)
+        #expect(stateModel.state == .expanded(activity))
+
+        let updated = NotchActivity(
+            id: activity.id,
+            kind: .characters,
+            detail: .characters(.empty)
+        )
+        engine.update(updated)
+        #expect(stateModel.state == .expanded(updated))
+    }
+
+    @Test func focusCanExpand() {
+        let stateModel = NotchStateModel()
+        let engine = ActivityEngine(stateModel: stateModel)
+        let activity = NotchActivity(id: ActivityID(rawValue: "terminal"), kind: .terminal)
+
+        engine.focus(activity, priority: .alert, expand: true)
+        #expect(stateModel.state == .expanded(activity))
+    }
 }

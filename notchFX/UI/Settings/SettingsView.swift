@@ -4,6 +4,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case general
     case island
     case media
+    case characters
     case gestures
     case about
 
@@ -14,6 +15,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .general: return "General"
         case .island: return "Isla"
         case .media: return "Música"
+        case .characters: return "Personajes"
         case .gestures: return "Gestos"
         case .about: return "Acerca de"
         }
@@ -24,6 +26,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .general: return "gearshape.fill"
         case .island: return "rectangle.inset.filled"
         case .media: return "music.note"
+        case .characters: return "person.3.fill"
         case .gestures: return "hand.draw.fill"
         case .about: return "info.circle.fill"
         }
@@ -32,7 +35,18 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
 struct SettingsView: View {
     @ObservedObject var settingsModel: SettingsModel
-    @State private var selectedSection: SettingsSection = .general
+    @ObservedObject var characters: CharacterSessionController
+    @State private var selectedSection: SettingsSection
+
+    init(
+        settingsModel: SettingsModel,
+        characters: CharacterSessionController,
+        initialSection: SettingsSection = .general
+    ) {
+        self.settingsModel = settingsModel
+        self.characters = characters
+        _selectedSection = State(initialValue: initialSection)
+    }
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2"
@@ -81,6 +95,11 @@ struct SettingsView: View {
                     IslandPane(settingsModel: settingsModel)
                 case .media:
                     MediaPane()
+                case .characters:
+                    CharactersPane(
+                        settingsModel: settingsModel,
+                        characters: characters
+                    )
                 case .gestures:
                     GesturesPane(settingsModel: settingsModel)
                 case .about:

@@ -31,10 +31,33 @@ final class ActivityEngine: ObservableObject {
     /// belongs to a different activity. Used for user-initiated actions such
     /// as the terminal, where the notch must switch even while music is
     /// expanded.
-    func focus(_ activity: NotchActivity, priority: ActivityPriority) {
+    func focus(_ activity: NotchActivity, priority: ActivityPriority, expand: Bool = false) {
         scheduler.upsert(activity, priority: priority, expiresAt: nil)
         stateModel.present(activity)
+        if expand {
+            stateModel.expand()
+        }
         scheduleNextExpiry()
+    }
+
+    /// Updates an activity that is already on screen without reordering it.
+    /// Used for high-frequency payload changes such as streaming agent logs.
+    @discardableResult
+    func update(_ activity: NotchActivity) -> Bool {
+        guard scheduler.update(activity) else { return false }
+
+        if scheduler.top?.activity.id == activity.id {
+            stateModel.replace(activity)
+        }
+        return true
+    }
+
+    func isShowing(_ id: ActivityID) -> Bool {
+        stateModel.state.activity?.id == id
+    }
+
+    func expand() {
+        stateModel.expand()
     }
 
     func dismissTop() {

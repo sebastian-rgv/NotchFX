@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 @testable import notchFXApp
 
@@ -90,5 +91,27 @@ struct ScreenGeometrySurfaceTests {
         #expect(ScreenGeometry.compactWidth <= ScreenGeometry.windowWidth)
         #expect(ScreenGeometry.expandedWidth <= ScreenGeometry.windowWidth)
         #expect(ScreenGeometry.expandedHeight <= ScreenGeometry.windowHeight)
+        #expect(ScreenGeometry.charactersExpandedHeight <= ScreenGeometry.windowHeight)
+    }
+
+    @Test func charactersUseTallerExpandedSurface() {
+        let characters = NotchActivity(
+            id: ActivityID(rawValue: "characters"),
+            kind: .characters,
+            detail: .characters(.empty)
+        )
+
+        let rect = ScreenGeometry.opaqueRectInWindow(for: .expanded(characters))
+        #expect(rect.height == ScreenGeometry.charactersExpandedHeight)
+        #expect(rect.maxY == ScreenGeometry.windowHeight)
+        #expect(rect.width == ScreenGeometry.expandedWidth)
+
+        let timer = NotchActivity(
+            id: ActivityID(rawValue: "timer"),
+            kind: .timer,
+            detail: .timer(endDate: Date())
+        )
+        let timerRect = ScreenGeometry.opaqueRectInWindow(for: .expanded(timer))
+        #expect(timerRect.height == ScreenGeometry.expandedHeight)
     }
 }
