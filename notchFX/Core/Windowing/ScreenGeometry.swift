@@ -5,7 +5,7 @@ enum ScreenGeometry {
     static let notchedDisplayMinimumTopSafeAreaInset: CGFloat = 20
 
     static let windowWidth: CGFloat = 400
-    static let windowHeight: CGFloat = 180
+    static let windowHeight: CGFloat = 340
 
     static let defaultCompactWidth: CGFloat = 360
     static let defaultCompactHeight: CGFloat = 46
@@ -14,6 +14,7 @@ enum ScreenGeometry {
 
     static let expandedWidth: CGFloat = 380
     static let expandedHeight: CGFloat = 152
+    static let charactersExpandedHeight: CGFloat = 296
 
     static let notchClearance: CGFloat = 34
     static let shoulderInset: CGFloat = 28
@@ -42,9 +43,19 @@ enum ScreenGeometry {
             return .zero
         case .compact:
             return topAnchoredRect(width: islandWidth, height: islandHeight)
-        case .expanded:
-            return topAnchoredRect(width: expandedWidth, height: expandedHeight)
+        case .expanded(let activity):
+            return topAnchoredRect(
+                width: expandedWidth,
+                height: expandedHeight(for: activity)
+            )
         }
+    }
+
+    static func expandedHeight(for activity: NotchActivity) -> CGFloat {
+        if case .characters = activity.detail {
+            return charactersExpandedHeight
+        }
+        return expandedHeight
     }
 
     private static func topAnchoredRect(width: CGFloat, height: CGFloat) -> CGRect {
@@ -88,8 +99,11 @@ extension ScreenGeometry {
         windowOrigin: CGPoint,
         islandWidth: CGFloat,
         duration: Double,
-        elapsed: Double
+        elapsed: Double,
+        kind: ActivityKind? = nil
     ) -> ExpandedZone {
+        guard kind == .nowPlaying else { return .background }
+
         let localX = globalPoint.x - (windowOrigin.x + (windowWidth - islandWidth) / 2)
         let localYFromTop = (windowOrigin.y + windowHeight) - globalPoint.y
 

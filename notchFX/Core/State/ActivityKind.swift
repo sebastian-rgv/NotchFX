@@ -8,6 +8,7 @@ enum ActivityKind: String, Codable, CaseIterable {
     case download
     case camera
     case terminal
+    case characters
 
     var displayName: String {
         switch self {
@@ -25,6 +26,8 @@ enum ActivityKind: String, Codable, CaseIterable {
             return "Camera"
         case .terminal:
             return "Terminal"
+        case .characters:
+            return "Personajes"
         }
     }
 
@@ -44,6 +47,8 @@ enum ActivityKind: String, Codable, CaseIterable {
             return "video.fill"
         case .terminal:
             return "terminal"
+        case .characters:
+            return "person.3.fill"
         }
     }
 }

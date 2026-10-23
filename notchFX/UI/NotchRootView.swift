@@ -7,6 +7,8 @@ struct NotchRootView: View {
     let surfaceStyle: NotchSettings.SurfaceStyle
     @ObservedObject var nowPlaying: NowPlayingActivityController
     @ObservedObject var terminal: TerminalController
+    @ObservedObject var characters: CharacterSessionController
+    let onManageCharacters: () -> Void
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -35,7 +37,9 @@ struct NotchRootView: View {
     private func surface(for activity: NotchActivity) -> some View {
         let isExpanded = isExpandedState
         let debugWidth = isExpanded ? ScreenGeometry.expandedWidth : settingsModel.settings.islandWidth
-        let debugHeight = isExpanded ? ScreenGeometry.expandedHeight : settingsModel.settings.islandHeight
+        let debugHeight = isExpanded
+            ? ScreenGeometry.expandedHeight(for: activity)
+            : settingsModel.settings.islandHeight
 
         if ProcessInfo.processInfo.environment["NFX_DEBUG"] == "1" {
             let _ = Self.appendRenderLog(width: debugWidth, height: debugHeight)
@@ -62,7 +66,13 @@ struct NotchRootView: View {
                 nfxTrace("estado después: \(stateModel.state)")
             },
             onDismiss: settingsModel.settings.swipeDismissEnabled
-                ? { engine.dismissTop() }
+                ? {
+                    if case .characters = activity.detail, characters.isRunning {
+                        stateModel.collapse()
+                    } else {
+                        engine.dismissTop()
+                    }
+                }
                 : {}
         )
     }
@@ -117,6 +127,25 @@ struct NotchRootView: View {
                 )
             } else {
                 TerminalCompactContent(display: display)
+            }
+
+        case .characters(let display):
+            if expanded {
+                CharactersExpandedContent(
+                    display: display,
+                    onSelect: { characters.select($0) },
+                    onRerun: { id in
+                        guard let profile = settingsModel.settings.characters
+                            .first(where: { $0.id == id }) else { return }
+                        characters.start(profile)
+                    },
+                    onStop: { characters.stop($0) },
+                    onStopAll: { characters.stopAll() },
+                    onManage: onManageCharacters,
+                    onClose: { characters.dismiss() }
+                )
+            } else {
+                CharactersCompactContent(display: display)
             }
 
         case .timerFinished(let label):

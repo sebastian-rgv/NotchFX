@@ -3,9 +3,18 @@ import SwiftUI
 
 @MainActor
 final class SettingsWindowController: NSWindowController {
-    init(settingsModel: SettingsModel) {
+    private let settingsModel: SettingsModel
+    private let characters: CharacterSessionController
+
+    init(settingsModel: SettingsModel, characters: CharacterSessionController) {
+        self.settingsModel = settingsModel
+        self.characters = characters
+
         let hosting = NSHostingController(
-            rootView: SettingsView(settingsModel: settingsModel)
+            rootView: SettingsView(
+                settingsModel: settingsModel,
+                characters: characters
+            )
         )
 
         let window = NSWindow(contentViewController: hosting)
@@ -24,7 +33,18 @@ final class SettingsWindowController: NSWindowController {
         fatalError("init(coder:) no está soportado")
     }
 
-    func present() {
+    func present(section: SettingsSection = .general) {
+        if let window {
+            window.contentViewController = NSHostingController(
+                rootView: SettingsView(
+                    settingsModel: settingsModel,
+                    characters: characters,
+                    initialSection: section
+                )
+            )
+            window.setContentSize(NSSize(width: 620, height: 400))
+        }
+
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

@@ -30,6 +30,7 @@ enum ActivityDetail: Equatable {
     case battery(percent: Int, isCharging: Bool)
     case nowPlaying(NowPlayingDisplay)
     case terminal(TerminalDisplay)
+    case characters(CharactersDisplay)
     case info(symbol: String, label: String)
 }
 

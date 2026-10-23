@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         static let displayMain = 2
         static let capsuleToggle = 10
         static let swipeToggle = 11
+        static let charactersMenu = 12
     }
 
     private let stateModel = NotchStateModel()
@@ -40,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         engine: engine
     )
     private lazy var terminalController = TerminalController(engine: engine)
+    private lazy var charactersController = CharacterSessionController(engine: engine)
     private lazy var cameraMonitor = CameraMonitor { [weak self] inUse in
         MainActor.assumeIsolated {
             self?.handleCamera(inUse: inUse)
@@ -50,16 +52,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         engine: engine,
         settingsModel: settingsModel,
         nowPlaying: nowPlayingController,
-        terminal: terminalController
+        terminal: terminalController,
+        characters: charactersController,
+        onManageCharacters: { [weak self] in
+            self?.settingsWindow.present(section: .characters)
+        }
     )
     private lazy var settingsWindow = SettingsWindowController(
-        settingsModel: settingsModel
+        settingsModel: settingsModel,
+        characters: charactersController
     )
 
     private var batteryService: BatteryMonitorService?
     private var statusItem: NSStatusItem?
     private var outsideClickMonitor: Any?
     private var terminalHotKey: GlobalHotKey?
+    private var charactersHotKey: GlobalHotKey?
 
     private var clickMonitor: Any?
 
@@ -101,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         installStatusItem()
         installTerminalHotKey()
+        installCharactersHotKey()
         startBatteryMonitoring()
         installOutsideClickMonitor()
         nowPlayingController.start()
@@ -113,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         nowPlayingController.stop()
+        charactersController.stopAll()
         batteryService?.stop()
 
         if let monitor = outsideClickMonitor {
@@ -150,6 +160,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         terminal.target = self
         terminal.keyEquivalentModifierMask = [.command, .option]
 
+        let charactersItem = menu.addItem(
+            withTitle: "Personajes",
+            action: nil,
+            keyEquivalent: ""
+        )
+        charactersItem.tag = MenuTag.charactersMenu
+        charactersItem.submenu = NSMenu()
+
         menu.addItem(withTitle: "Temporizador demo (10 s)", action: #selector(startDemoTimer), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Alerta de prueba", action: #selector(emitTestAlert), keyEquivalent: "").target = self
         menu.addItem(.separator())
@@ -180,7 +198,106 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func menuWillOpen(_ menu: NSMenu) {
+        rebuildCharactersMenu(menu)
         refreshMenuState(menu)
+    }
+
+    // MARK: - Characters
+
+    private func installCharactersHotKey() {
+        charactersHotKey = GlobalHotKey(
+            keyCode: UInt32(kVK_ANSI_P),
+            modifiers: UInt32(cmdKey | optionKey)
+        ) { [weak self] in
+            MainActor.assumeIsolated {
+                self?.openCharactersPanel()
+            }
+        }
+
+        if charactersHotKey == nil {
+            nfxTrace("Characters hotkey no se pudo registrar")
+        }
+    }
+
+    @objc private func openCharactersPanel() {
+        charactersController.openPanel(
+            profiles: settingsModel.settings.characters
+        )
+    }
+
+    @objc private func manageCharacters() {
+        settingsWindow.present(section: .characters)
+    }
+
+    @objc private func runCharacter(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let id = UUID(uuidString: raw),
+              let profile = settingsModel.settings.characters
+                  .first(where: { $0.id == id }) else {
+            return
+        }
+        charactersController.start(profile)
+    }
+
+    private func rebuildCharactersMenu(_ menu: NSMenu) {
+        guard let item = menu.items.first(where: {
+            $0.tag == MenuTag.charactersMenu
+        }), let submenu = item.submenu else {
+            return
+        }
+
+        submenu.removeAllItems()
+        let profiles = settingsModel.settings.characters
+
+        if profiles.isEmpty {
+            let empty = NSMenuItem(
+                title: "Sin personajes todavía",
+                action: nil,
+                keyEquivalent: ""
+            )
+            empty.isEnabled = false
+            empty.tag = MenuTag.charactersMenu
+            submenu.addItem(empty)
+        } else {
+            for profile in profiles {
+                let item = NSMenuItem(
+                    title: profile.name,
+                    action: #selector(runCharacter(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = profile.id.uuidString
+                item.tag = MenuTag.charactersMenu
+
+                if charactersController.display.snapshots
+                    .first(where: { $0.id == profile.id })?.state.isRunning == true {
+                    item.state = .on
+                    item.isEnabled = false
+                }
+
+                submenu.addItem(item)
+            }
+        }
+
+        submenu.addItem(.separator())
+
+        let open = NSMenuItem(
+            title: "Abrir panel de personajes",
+            action: #selector(openCharactersPanel),
+            keyEquivalent: ""
+        )
+        open.target = self
+        open.tag = MenuTag.charactersMenu
+        submenu.addItem(open)
+
+        let manage = NSMenuItem(
+            title: "Gestionar personajes…",
+            action: #selector(manageCharacters),
+            keyEquivalent: ""
+        )
+        manage.target = self
+        manage.tag = MenuTag.charactersMenu
+        submenu.addItem(manage)
     }
 
     // MARK: - Terminal

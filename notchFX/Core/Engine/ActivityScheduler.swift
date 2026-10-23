@@ -46,6 +46,25 @@ struct ActivityScheduler {
         entries.removeAll { $0.activity.id == id }
     }
 
+    /// Replaces the payload of an activity that is already scheduled without
+    /// changing its priority, expiry or ordering. Returns false when the
+    /// activity is not present.
+    @discardableResult
+    mutating func update(_ activity: NotchActivity) -> Bool {
+        guard let index = entries.firstIndex(where: { $0.activity.id == activity.id }) else {
+            return false
+        }
+
+        let current = entries[index]
+        entries[index] = ScheduledActivity(
+            activity: activity,
+            priority: current.priority,
+            expiresAt: current.expiresAt,
+            sequence: current.sequence
+        )
+        return true
+    }
+
     @discardableResult
     mutating func expire(now: Date) -> [ScheduledActivity] {
         let expired = entries.filter { $0.isExpired(at: now) }
